@@ -217,21 +217,14 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# GRIB data — nikdy necommitovat (výjimka: malé testovací fixtures)
+# GRIB data — never commit (exception: small test fixtures)
 *.grib
 *.grib2
 *.grb
 *.grb2
 !tests/fixtures/*.grib2
 
-# Python
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-.pytest_cache/
-
-# Dočasné soubory pipeline
+# Pipeline temporary files
 data/*.tmp
 tmp/
 *.idx
