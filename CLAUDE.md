@@ -94,6 +94,12 @@ bez vyzvání.
 - **Interpret Pythonu:** pro veškeré spouštění používej
   `~/.venvs/grib/bin/python`. Systémový `python3` nemá nainstalované
   závislosti projektu.
+- **Příprava prostředí:** virtuální prostředí vytvoří skript
+  `scripts/setup-env.sh`, který do něj nainstaluje závislosti
+  z `requirements.txt`. V relacích Claude Code on the web jej automaticky
+  spouští SessionStart hook `.claude/hooks/session-start.sh`. Instalace jde
+  z PyPI, nikoli z distribučních balíčků: ty jsou přeložené pro Python 3.12,
+  zatímco výchozím interpretem je zde Python 3.11.
 - Závislosti udržuj v `requirements.txt`.
 - GRIB soubory necommituj. Vzorový soubor pro testy drž malý (jeden
   parametr, jeden časový krok) v `tests/fixtures/`.
