@@ -11,8 +11,10 @@ autentizace, žádný trvale běžící server.
 - **Sledované parametry:** teplota 2 m, úhrn srážek, celková oblačnost,
   rychlost a směr větru
 - **Místa (název, lat, lon):**
-  - `DOPLNIT`, `49.xxxx`, `16.xxxx`
-  - `DOPLNIT` (volitelné druhé místo)
+  - `Home`, `50.110113`, `14.558445` — Lipnická 1450, Kyje, 198 00 Praha 9;
+    souřadnice z RÚIAN (kód adresního místa 25225472), WGS-84. Nejbližší bod
+    mřížky CZ_1km leží 272 m daleko na 50,1110 N a 14,5620 E.
+  - Další místa lze přidat později, schéma i pipeline s více místy počítají.
 - **Hosting:** GitHub Actions (cron) + GitHub Pages
 
 ## Zdroj dat
