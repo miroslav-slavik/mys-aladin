@@ -1,0 +1,53 @@
+name: forecast
+
+# Each slot sits 34-42 minutes after the run it consumes; the delay per run was
+# measured in Phase 1 and is recorded in docs/parametry.md. Cron in Actions can
+# fire late but never early, so the margin only ever grows.
+on:
+  schedule:
+    - cron: "15 4 * * *"   # run 00 UTC, published around 03:34
+    - cron: "0 11 * * *"   # run 06 UTC, published around 10:26
+    - cron: "0 16 * * *"   # run 12 UTC, published around 15:18
+    - cron: "0 23 * * *"   # run 18 UTC, published around 22:25
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: forecast
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -c constraints.txt
+
+      - name: Run tests
+        run: python -m pytest tests -q
+
+      - name: Build forecast
+        run: python -m pipeline
+
+      - name: Publish when the run changed
+        run: |
+          # --porcelain also reports the file as untracked, which is what the
+          # very first run looks like; git diff alone would miss that.
+          if [ -z "$(git status --porcelain -- data/forecast.json)" ]; then
+            echo "no new run, nothing to publish"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/forecast.json
+          git commit -m "Update forecast to run $(python -c "import json;print(json.load(open('data/forecast.json'))['run_id'])")"
+          git push
