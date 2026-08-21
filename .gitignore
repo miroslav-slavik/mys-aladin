@@ -222,6 +222,7 @@ __marimo__/
 *.grib2
 *.grb
 *.grb2
+!tests/fixtures/*.grb
 !tests/fixtures/*.grib2
 
 # Pipeline temporary files

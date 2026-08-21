@@ -21,10 +21,17 @@ autentizace, žádný trvale běžící server.
 - Použij sadu **CZ_1km** (pravidelná lat/lon mřížka nad ČR). Sadu
   Lambert_2.3km nepoužívej.
 - Struktura: podadresáře `00/`, `06/`, `12/`, `18/` podle běhu modelu (UTC).
-  Výstup běhu je dostupný přibližně tři hodiny po nominálním čase běhu,
-  předpověď sahá 72 hodin dopředu.
+  Výstup běhů 00 a 12 je dostupný zhruba tři a půl hodiny po nominálním
+  čase, u běhů 06 a 18 až po čtyřech a půl hodinách (naměřeno ve Fázi 1).
+  Každý běh má 31 souborů, retence jsou tři běhy. Předpověď sahá 72 hodin
+  dopředu s krokem jedné hodiny.
 - Popis obsahu: soubor `Popis_obsahu.xlsx` v kořeni datové sady.
-- Formát: GRIB2. Parsuj knihovnou `cfgrib` nad `xarray`.
+- Formát: **GRIB edice 1** (ověřeno ve Fázi 1), soubory komprimované bzip2.
+  Parsuj knihovnou `cfgrib` nad `xarray`. Pozor: část parametrů pochází
+  z lokální tabulky centra 89, takže je `cfgrib` zpřístupní jako proměnnou
+  `unknown`. Veličinu identifikuj podle názvu souboru a klíče
+  `indicatorOfParameter`, nikoli podle názvu proměnné. Podrobnosti
+  v `docs/parametry.md`.
 - Licence CC BY 4.0. V uživatelském rozhraní uváděj „Zdroj dat: ČHMÚ,
   model ALADIN".
 
