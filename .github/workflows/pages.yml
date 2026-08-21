@@ -1,0 +1,47 @@
+name: pages
+
+# Deploys the PWA together with the current forecast. The forecast workflow
+# commits with GITHUB_TOKEN, and such a push does not start another workflow,
+# so this one also listens for that workflow finishing.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "data/forecast.json"
+      - "scripts/build-site.sh"
+      - ".github/workflows/pages.yml"
+  workflow_run:
+    workflows: [forecast]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble the site
+        run: ./scripts/build-site.sh site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
