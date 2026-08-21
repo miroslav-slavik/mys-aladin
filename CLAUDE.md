@@ -100,7 +100,9 @@ bez vyzvání.
   spouští SessionStart hook `.claude/hooks/session-start.sh`. Instalace jde
   z PyPI, nikoli z distribučních balíčků: ty jsou přeložené pro Python 3.12,
   zatímco výchozím interpretem je zde Python 3.11.
-- Závislosti udržuj v `requirements.txt`.
+- Závislosti udržuj v `requirements.txt` s pevně připnutými verzemi.
+  Tranzitivní závislosti uzamyká `constraints.txt`; po každé změně
+  `requirements.txt` jej regeneruj postupem popsaným v jeho hlavičce.
 - GRIB soubory necommituj. Vzorový soubor pro testy drž malý (jeden
   parametr, jeden časový krok) v `tests/fixtures/`.
 - Ke zdroji dat se chovej šetrně: stahuj jen potřebné soubory, neopakuj

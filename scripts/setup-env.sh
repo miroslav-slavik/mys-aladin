@@ -14,6 +14,7 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENV_DIR="${GRIB_VENV_DIR:-$HOME/.venvs/grib}"
 REQUIREMENTS="$PROJECT_DIR/requirements.txt"
+CONSTRAINTS="$PROJECT_DIR/constraints.txt"
 
 if [ ! -d "$VENV_DIR" ]; then
   python3 -m venv "$VENV_DIR"
@@ -23,7 +24,10 @@ fi
 source "$VENV_DIR/bin/activate"
 
 pip install --upgrade pip
-if [ -f "$REQUIREMENTS" ]; then
+if [ -f "$REQUIREMENTS" ] && [ -f "$CONSTRAINTS" ]; then
+  # constraints.txt also pins the transitive dependencies.
+  pip install -r "$REQUIREMENTS" -c "$CONSTRAINTS"
+elif [ -f "$REQUIREMENTS" ]; then
   pip install -r "$REQUIREMENTS"
 else
   # Fallback for a checkout without requirements.txt: the GRIB reader alone.
