@@ -1,0 +1,12 @@
+# Parsování GRIB2 výstupů modelu ALADIN
+cfgrib
+eccodes
+xarray
+numpy
+pandas
+
+# Čtení Popis_obsahu.xlsx z opendata ČHMÚ
+openpyxl
+
+# Stahování dat
+requests

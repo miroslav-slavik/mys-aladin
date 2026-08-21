@@ -1,13 +1,13 @@
 #!/bin/bash
-# SessionStart hook: pripravi prostredi pro cteni meteorologickych GRIB2 souboru.
+# SessionStart hook: prepares the environment for reading ALADIN GRIB2 output.
 #
-# Delegat na scripts/setup-env.sh, ktery instaluje cfgrib a eccodes do
-# izolovaneho venv. Hook je idempotentni, takze opakovane spusteni jen overi,
-# ze uz pripravene prostredi funguje.
+# Delegates to scripts/setup-env.sh, which installs the project dependencies
+# into an isolated venv. The hook is idempotent, so a repeated run only
+# verifies that an already prepared environment still works.
 set -euo pipefail
 
-# Lokalne (mimo Claude Code on the web) hook nic nedela, aby nezasahoval
-# do vyvojaskeho prostredi na stanici.
+# Outside Claude Code on the web the hook does nothing, so that a local
+# development machine stays untouched.
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
@@ -17,7 +17,7 @@ VENV_DIR="${GRIB_VENV_DIR:-$HOME/.venvs/grib}"
 
 GRIB_VENV_DIR="$VENV_DIR" bash "$PROJECT_DIR/scripts/setup-env.sh"
 
-# Zpristupni venv po zbytek relace, aby prikazy python a pip mirily do nej.
+# Expose the venv for the rest of the session, so python and pip resolve to it.
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   {
     echo "export VIRTUAL_ENV=\"$VENV_DIR\""
