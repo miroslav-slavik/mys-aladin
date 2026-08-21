@@ -1,15 +1,19 @@
+# Verze jsou připnuté napevno, protože pipeline běží bez dohledu čtyřikrát
+# denně přes GitHub Actions. Upgrade provádějte vědomě: zvyšte verzi, spusťte
+# scripts/setup-env.sh a testy, teprve pak commitněte.
+
 # Parsování GRIB2 výstupů modelu ALADIN
-cfgrib
-eccodes
-xarray
-numpy
-pandas
+cfgrib==0.9.15.1
+eccodes==2.47.0
+xarray==2026.7.0
+numpy==2.4.6
+pandas==3.0.5
 
 # Čtení Popis_obsahu.xlsx z opendata ČHMÚ
-openpyxl
+openpyxl==3.1.5
 
 # Stahování dat
-requests
+requests==2.34.2
 
 # Jednotkové testy parseru (Fáze 2)
-pytest
+pytest==9.1.1
