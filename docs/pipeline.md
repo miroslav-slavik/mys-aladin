@@ -62,6 +62,13 @@ Workflow `.github/workflows/forecast.yml` běží čtyřikrát denně, spustí t
 sestaví předpověď a commitne `data/forecast.json` jen tehdy, když se změnil.
 Časy cronu odpovídají naměřenému zpoždění publikace, viz `parametry.md`.
 
+Ruční spuštění přes **Actions → forecast → Run workflow** má volitelný přepínač
+`force`. Bez něj se workflow chová stejně jako plánovaný běh. S ním předá
+pipeline `--force`, takže se předpověď přepočítá i pro už zpracovaný běh.
+Slouží k odladění publikace mimo okno, kdy ČHMÚ zveřejňuje nová data. Počítejte
+s tím, že vynucený běh změní pole `generated_at`, takže vždy vznikne commit,
+i když jsou samotné hodnoty předpovědi shodné. Plánované běhy nikdy nevynucují.
+
 ## Testy
 
 ```bash

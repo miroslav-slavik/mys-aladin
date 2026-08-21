@@ -10,6 +10,11 @@ on:
     - cron: "0 16 * * *"   # run 12 UTC, published around 15:18
     - cron: "0 23 * * *"   # run 18 UTC, published around 22:25
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Rebuild even when the newest run is already published"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,7 +41,9 @@ jobs:
         run: python -m pytest tests -q
 
       - name: Build forecast
-        run: python -m pipeline
+        # The scheduled runs never force; only a manual dispatch can, which is
+        # what makes a publish testable outside the model's publication window.
+        run: python -m pipeline ${{ inputs.force && '--force' || '' }}
 
       - name: Publish when the run changed
         run: |
