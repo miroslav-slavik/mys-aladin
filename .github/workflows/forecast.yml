@@ -1,14 +1,22 @@
 name: forecast
 
-# Each slot sits 34-42 minutes after the run it consumes; the delay per run was
-# measured in Phase 1 and is recorded in docs/parametry.md. Cron in Actions can
-# fire late but never early, so the margin only ever grows.
+# Two layers. The four primary slots sit 34-42 minutes after the model
+# publishes each run (delays measured in Phase 1, see docs/parametry.md), so a
+# new forecast normally reaches the site within the hour. The safety net every
+# two hours exists because scheduled runs in Actions are best-effort: they have
+# been observed several hours late and, once, skipped altogether, which left
+# one model run unpublished. With the net, the next attempt is never more than
+# two hours away.
+#
+# The extra slots are cheap for both sides: a run that finds nothing new exits
+# in seconds after reading four directory listings, and downloads nothing.
 on:
   schedule:
-    - cron: "15 4 * * *"   # run 00 UTC, published around 03:34
-    - cron: "0 11 * * *"   # run 06 UTC, published around 10:26
-    - cron: "0 16 * * *"   # run 12 UTC, published around 15:18
-    - cron: "0 23 * * *"   # run 18 UTC, published around 22:25
+    - cron: "15 4 * * *"        # run 00 UTC, published around 03:34
+    - cron: "0 11 * * *"        # run 06 UTC, published around 10:26
+    - cron: "0 16 * * *"        # run 12 UTC, published around 15:18
+    - cron: "0 23 * * *"        # run 18 UTC, published around 22:25
+    - cron: "45 1-23/2 * * *"   # safety net, odd hours at :45
   workflow_dispatch:
     inputs:
       force:

@@ -58,9 +58,13 @@ se pipeline pokusí stáhnout soubor, který ještě nebyl publikován.
 
 ## Publikace
 
-Workflow `.github/workflows/forecast.yml` běží čtyřikrát denně, spustí testy,
+Workflow `.github/workflows/forecast.yml` běží šestnáctkrát denně, spustí testy,
 sestaví předpověď a commitne `data/forecast.json` jen tehdy, když se změnil.
-Časy cronu odpovídají naměřenému zpoždění publikace, viz `parametry.md`.
+Časy cronu odpovídají naměřenému zpoždění publikace, viz `parametry.md`. Ke
+čtyřem hlavním slotům je přidána záchytná vrstva každé dvě hodiny, protože
+plánované běhy v Actions se v provozu opožďovaly i o hodiny a jeden slot byl
+vynechán. Většina běhů proto skončí bez akce, což je levné: čtení výpisu
+adresářů a nic víc.
 
 Ruční spuštění přes **Actions → forecast → Run workflow** má volitelný přepínač
 `force`. Bez něj se workflow chová stejně jako plánovaný běh. S ním předá

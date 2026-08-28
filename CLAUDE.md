@@ -40,8 +40,9 @@ autentizace, žádný trvale běžící server.
 ## Architektura
 
 1. **Pipeline (`pipeline/`)** — Python skript spouštěný přes GitHub Actions
-   cronem čtyřikrát denně, vždy s rezervou po publikaci příslušného běhu
-   (viz naměřená zpoždění v `docs/parametry.md`):
+   cronem šestnáctkrát denně, ve dvou vrstvách (viz naměřená zpoždění
+   v `docs/parametry.md`). Čtyři hlavní sloty leží s rezervou po publikaci
+   příslušného běhu:
 
    | Cron (UTC) | Zpracovávaný běh | Publikace běhu | Rezerva |
    |---|---|---|---|
@@ -49,6 +50,13 @@ autentizace, žádný trvale běžící server.
    | 11:00 | 06 | ~10:26 | 34 min |
    | 16:00 | 12 | ~15:18 | 42 min |
    | 23:00 | 18 | ~22:25 | 35 min |
+
+   Záchytná vrstva `45 1-23/2 * * *` přidává pokus každé dvě hodiny. Důvodem
+   je provozní zkušenost: plánované běhy v Actions se opožďovaly i o několik
+   hodin a jednou se slot vynechal úplně, takže běh 2026-08-26T18:00Z nebyl
+   nikdy publikován. Se záchytnou vrstvou není další pokus nikdy dál než dvě
+   hodiny. Běh, který nenajde nová data, skončí po přečtení čtyř výpisů
+   adresářů a nestahuje nic.
 
    Zpoždění publikace není u všech běhů stejné: běhy 00 a 12 vycházejí asi po
    třech a půl hodinách, běhy 06 a 18 až po čtyřech a půl. Cron v GitHub
