@@ -21,6 +21,10 @@
 
 * { box-sizing: border-box; }
 
+/* Author rules with an explicit display beat the user-agent rule for the
+   hidden attribute, so state it here and let it win. */
+[hidden] { display: none !important; }
+
 html { background: var(--plane); }
 
 body {
