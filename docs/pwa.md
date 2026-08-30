@@ -62,6 +62,13 @@ nemůže.
 se hlídá v pixelech. Jinak by se popisky slily a nejvyšší vrchol dne by zůstal
 bez čísla, protože místo by zabral mírný ranní hrbol.
 
+**Veličiny v hlavičce označují ikony, ne slova**, stejně jako v předloze:
+teploměr, přeháňka, větrná turbína a mrak. Kreslené jsou zdejší, jen podle
+předlohy: obrázky na `aladinonline.oblacno.cz` jsou cizí dílo bez otevřené
+licence (CC BY 4.0 se týká dat ČHMÚ, ne grafiky té stránky), takže se
+nepřebírají. Každá ikona nese barvu, kterou má veličina v grafu, a název
+veličiny zůstává v textu pro čtečky obrazovky.
+
 Ikony počasí se odvozují z oblačnosti, srážek, teploty a denní doby. Kreslí se
 jako SVG přímo v kódu, takže nejsou potřeba žádné obrázkové soubory.
 

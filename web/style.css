@@ -96,19 +96,49 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .now-main { text-align: center; }
 
 .now-temp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   margin: 0;
   font-size: 40px;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.05;
+  white-space: nowrap;
 }
 
-.now-rain { margin: 6px 0 0; font-size: 17px; color: var(--muted); }
+/* The icon costs width the number used to have. On the narrowest phones the
+   reading would break across two lines, so give it a smaller size there. */
+@media (max-width: 360px) {
+  .now { padding: 10px 12px 14px; }
+  .now-temp { font-size: 34px; gap: 8px; }
+}
 
-.now-side { margin: 0; display: grid; gap: 4px; }
-.now-side div { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; }
-.now-side dt { font-size: 12px; color: var(--muted); }
+.now-rain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: 17px;
+  color: var(--muted);
+}
+
+.now-side { margin: 0; display: grid; gap: 6px; }
+.now-side div { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.now-side dt { display: flex; }
 .now-side dd { margin: 0; font-size: 17px; }
+
+/* Each quantity is named by an icon rather than a word, the way the reference
+   meteogram does it: a thermometer, a shower, a turbine and a cloud. They are
+   drawn here, not taken from the reference, and each carries the colour its
+   series has in the chart. The word stays for screen readers. */
+.param-icon { flex: 0 0 auto; display: block; }
+.icon-temp { color: var(--temp-line); }
+.icon-rain { color: var(--rain); }
+.icon-wind { color: var(--wind); }
+.icon-cloud { color: var(--cloud); }
 
 /* Hourly icons ------------------------------------------------------- */
 
