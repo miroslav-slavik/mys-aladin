@@ -24,16 +24,21 @@ hodinových ikon a jeden graf s přepínači.
 Název místa v hlavičce bere pole `label` z `forecast.json`, tedy „Kyje, Praha 9",
 nikoli interní klíč `name`, který zůstává „Home".
 
-Celých 72 hodin se vejde na šířku displeje, takže se nikam neposouvá a celý
-průběh je vidět najednou. To je proti dřívější verzi zásadní změna: ta měla graf
-v posuvníku a bylo nutné jej rolovat.
+Graf ukazuje prvních **60 hodin** a vejde se na šířku displeje, takže se nikam
+neposouvá a celý průběh je vidět najednou. To je proti dřívější verzi zásadní
+změna: ta měla graf v posuvníku a bylo nutné jej rolovat.
+
+Posledních dvanáct hodin se do grafu nekreslí. Při všech 72 hodinách vychází na
+telefonu asi čtyři pixely na hodinu, což je na čtení málo, a konec dosahu je
+zároveň nejméně spolehlivá část běhu. Tabulka nadále obsahuje všech 72 hodin.
+Rozsah řídí konstanta `CHART_HOURS` v `web/app.js`.
 
 | Pohled | Forma |
 |---|---|
 | Teplota | plocha s křivkou, k tomu modré sloupce srážek |
 | Vítr | plocha s křivkou rychlosti a řádek šipek se směrem |
 | Oblačnost | plocha na pevné ose 0 až 100 % |
-| Tabulka | všech 72 řádků s hodnotami |
+| Tabulka | všech 72 hodin předpovědi |
 
 **Srážky mají vlastní popsanou osu vpravo.** Předloha je kreslí do grafu teploty
 bez měřítka, takže z nich lze odečíst jen „hodně a málo". Popisky v milimetrech

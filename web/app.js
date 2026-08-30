@@ -16,6 +16,12 @@ const SVG_H = PAD_T + PLOT_H + AXIS_H;
 
 const DAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
 
+/* The chart drops the tail of the forecast. Squeezing all 72 hours into the
+   width of a phone leaves about four pixels per hour, which is too little to
+   read; the last half day is also the least trustworthy part of the run. The
+   table still lists every hour. */
+const CHART_HOURS = 60;
+
 const state = { series: [], view: "temperature", fromCache: false, generatedAt: 0 };
 
 function el(name, attrs = {}, parent = null) {
@@ -142,7 +148,9 @@ function drawIcon(kind, size) {
   return svg;
 }
 
-function drawIconRow(series) {
+function drawIconRow(fullSeries) {
+  // The icon row spans the same hours as the chart below it.
+  const series = fullSeries.slice(0, CHART_HOURS);
   const row = document.getElementById("iconRow");
   row.textContent = "";
   const width = row.clientWidth || 340;
@@ -191,7 +199,8 @@ const VIEWS = {
   },
 };
 
-function drawChart(series, viewName) {
+function drawChart(fullSeries, viewName) {
+  const series = fullSeries.slice(0, CHART_HOURS);
   const view = VIEWS[viewName];
   const svg = document.getElementById("chart");
   svg.textContent = "";
