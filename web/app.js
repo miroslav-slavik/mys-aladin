@@ -645,9 +645,33 @@ window.addEventListener("offline", updateAge);
 // The age creeps up while the app sits open on the home screen.
 setInterval(updateAge, 60e3);
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
+/* The shell is served from the cache, so a new version of the app reaches the
+   screen only once a new service worker takes over. Left to itself that takes
+   two openings: the first one installs the update in the background and keeps
+   showing the old page. So ask for the update on every opening and reload the
+   page as soon as the new worker takes control. */
+let registration = null;
+let reloading = false;
+
+function watchForUpdates() {
+  if (!("serviceWorker" in navigator)) return;
+  const controlled = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // On the very first visit the worker takes control of a page that is
+    // already the current version; only a replacement is worth a reload.
+    if (!controlled || reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+  navigator.serviceWorker.register("sw.js").then((reg) => {
+    registration = reg;
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) reg.update().catch(() => {});
+    });
+  }).catch(() => {});
 }
+
+window.addEventListener("load", watchForUpdates);
 
 load();
 
@@ -656,6 +680,9 @@ refreshButton.addEventListener("click", async () => {
   refreshButton.disabled = true;
   refreshButton.classList.add("is-busy");
   try {
+    // The button means "give me the newest of everything", the app itself
+    // included, not just the newest forecast.
+    if (registration) await registration.update().catch(() => {});
     await load(true);
   } finally {
     refreshButton.disabled = false;

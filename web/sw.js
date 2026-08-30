@@ -3,7 +3,7 @@
    forecast stays in the cache as the offline fallback. */
 "use strict";
 
-const CACHE = "mys-aladin-v14";
+const CACHE = "mys-aladin-v15";
 const FORECAST = "data/forecast.json";
 
 const SHELL = [
@@ -18,8 +18,12 @@ const SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
+  // Fetch past the browser cache. Pages serves the shell with a ten minute
+  // lifetime, so a plain addAll can fill a brand new cache with the very files
+  // the new version is meant to replace.
+  const fresh = SHELL.map((url) => new Request(url, { cache: "reload" }));
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE).then((cache) => cache.addAll(fresh)).then(() => self.skipWaiting())
   );
 });
 

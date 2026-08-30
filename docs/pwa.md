@@ -137,6 +137,18 @@ nastaví samostatné okno bez adresního řádku, ikony jsou v `web/icons/`.
 Po změně souborů v `web/` je potřeba zvýšit `CACHE` v `web/sw.js`. Bez toho si
 zařízení podrží starou skořápku.
 
+**Nová verze se ukáže po jednom otevření.** Skořápka jde z cache, takže se nové
+soubory dostanou na obrazovku, až převezme řízení nový service worker. Sám od
+sebe to trvá dvě otevření: první nový worker jen na pozadí nainstaluje a zobrazí
+přitom starou stránku. Aplikace proto při každém otevření i při návratu na
+popředí volá `registration.update()` a při události `controllerchange` se sama
+načte znovu. Ověřeno v prohlížeči: s touto úpravou stačí jedno otevření, bez ní
+zůstala po prvním otevření stará verze.
+
+Service worker si navíc soubory při instalaci stahuje s `cache: "reload"`.
+GitHub Pages je posílá s desetiminutovou platností, takže bez toho může nová
+cache dostat právě ty soubory, které má nová verze nahradit.
+
 ## Ikony
 
 Generuje je `scripts/make-icons.py` do `web/icons/`. Prostředí nemá grafickou
