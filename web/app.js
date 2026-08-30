@@ -5,11 +5,13 @@
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-const PAD_L = 30;   // °C / m/s / % labels
-const PAD_R = 30;   // mm labels
+// The gutters hold the axis labels, which grew with the larger type: at the
+// old size the left ticks and the day names ran outside the SVG.
+const PAD_L = 34;   // °C / m/s / % labels
+const PAD_R = 32;   // mm labels
 const PAD_T = 14;
 const PLOT_H = 220;
-const AXIS_H = 30;
+const AXIS_H = 36;
 const SVG_H = PAD_T + PLOT_H + AXIS_H;
 
 const DAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
