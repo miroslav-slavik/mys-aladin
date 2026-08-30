@@ -213,7 +213,7 @@ tbody tr.day-start td, tbody tr.day-start th { border-top: 1px solid var(--axis)
 }
 
 footer {
-  padding: 14px 16px 24px;
+  padding: 14px 8px 24px;
   color: var(--muted);
   font-size: 12px;
 }

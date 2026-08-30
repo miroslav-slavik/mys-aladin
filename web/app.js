@@ -5,10 +5,11 @@
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-// The gutters hold the axis labels, which grew with the larger type: at the
-// old size the left ticks and the day names ran outside the SVG.
-const PAD_L = 34;   // °C / m/s / % labels
-const PAD_R = 32;   // mm labels
+// The vertical axes carry no numbers, so the gutters only keep the curve off
+// the edge of the card. Values are read from the labelled extremes, from the
+// touch readout, or from the table.
+const PAD_L = 8;
+const PAD_R = 8;
 const PAD_T = 14;
 const PLOT_H = 220;
 const AXIS_H = 36;
@@ -230,8 +231,6 @@ function drawChart(fullSeries, viewName) {
 
   for (const tick of niceTicks(lo, hi, 4)) {
     el("line", { class: "grid-line", x1: left, y1: y(tick), x2: right, y2: y(tick) }, svg);
-    el("text", { class: "tick", x: left - 5, y: y(tick) + 3, "text-anchor": "end" }, svg)
-      .textContent = view.format(tick);
   }
 
   const points = series.map((row, i) => [x(i), y(view.value(row))]);
@@ -280,12 +279,6 @@ function drawRain(svg, series, x, base, right) {
     el("rect", { class: "rain-bar", x: x(i) - barW / 2, y: base - h, width: barW, height: h, rx: Math.min(1.5, barW / 2) }, svg);
   });
 
-  for (const tick of ticks) {
-    el("text", {
-      class: "tick", x: right + 5, y: base - scale(tick) + 3, fill: "var(--rain)",
-    }, svg).textContent = tick < 1 ? tick.toFixed(1) : String(tick);
-  }
-  el("text", { class: "tick", x: right + 5, y: PAD_T + 8, fill: "var(--rain)" }, svg).textContent = "mm";
 }
 
 function drawArrows(svg, series, x, base) {
@@ -327,7 +320,15 @@ function labelExtremes(svg, series, view, x, y) {
   // the day's peak.
   const middle = (Math.min(...values) + Math.max(...values)) / 2;
   found.sort((a, b) => Math.abs(b.value - middle) - Math.abs(a.value - middle));
-  const placed = [];
+
+  // Where the forecast starts is worth a number of its own, so the first point
+  // is labelled before the extremes compete for the remaining room.
+  const placed = [{
+    index: 0,
+    value: values[0],
+    isMax: values[0] >= values[1],
+    anchor: "start",
+  }];
   for (const point of found) {
     if (placed.length >= 5) break;
     // Labels are spaced in pixels, not in hours: at this density two extremes
@@ -344,11 +345,15 @@ function labelExtremes(svg, series, view, x, y) {
     const above = point.isMax && y(point.value) - 7 >= top;
     const below = !point.isMax && y(point.value) + 14 <= bottom;
     const offset = above ? -7 : below ? 14 : point.isMax ? 14 : -7;
+    const anchor = point.anchor || "middle";
+    const x0 = anchor === "start"
+      ? x(point.index) + 2
+      : Math.min(Math.max(x(point.index), PAD_L + 24), x(series.length - 1) - 24);
     el("text", {
       class: "value-label",
-      x: Math.min(Math.max(x(point.index), PAD_L + 18), x(series.length - 1) - 18),
+      x: x0,
       y: Math.min(Math.max(y(point.value) + offset, top), bottom),
-      "text-anchor": "middle",
+      "text-anchor": anchor,
     }, svg).textContent = `${view.format(point.value)} ${view.unit}`;
   }
 }
@@ -362,8 +367,16 @@ function drawTimeAxis(svg, series, x, base, left, right) {
     el("text", { class: "tick", x: x(i), y: base + 15, "text-anchor": "middle" }, svg)
       .textContent = String(hour).padStart(2, "0");
     if (hour === 0) {
-      el("text", { class: "day-label", x: x(i), y: base + 27, "text-anchor": "middle" }, svg)
-        .textContent = `${DAYS[row.date.getDay()]} ${row.date.getDate()}.${row.date.getMonth() + 1}.`;
+      // Now that the plot runs to the edge of the card, a midnight close to the
+      // right border would push its day name outside the SVG.
+      const nearRight = x(i) > right - 46;
+      const nearLeft = x(i) < left + 46;
+      el("text", {
+        class: "day-label",
+        x: nearRight ? right : nearLeft ? left : x(i),
+        y: base + 27,
+        "text-anchor": nearRight ? "end" : nearLeft ? "start" : "middle",
+      }, svg).textContent = `${DAYS[row.date.getDay()]} ${row.date.getDate()}.${row.date.getMonth() + 1}.`;
     }
   });
 }

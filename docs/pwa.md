@@ -40,9 +40,14 @@ Rozsah řídí konstanta `CHART_HOURS` v `web/app.js`.
 | Oblačnost | plocha na pevné ose 0 až 100 % |
 | Tabulka | všech 72 hodin předpovědi |
 
-**Srážky mají vlastní popsanou osu vpravo.** Předloha je kreslí do grafu teploty
-bez měřítka, takže z nich lze odečíst jen „hodně a málo". Popisky v milimetrech
-tuto vadu odstraňují a od předlohy se liší jen nenápadně.
+**Svislé osy nemají popisky.** Na přání uživatele zmizely jak stupně vlevo, tak
+milimetry vpravo. Graf tím získal obě postranní pásma a kreslí se přes celou
+šířku karty. Konkrétní hodnoty nese trojice přímých popisků v křivce, dotykový
+řádek pod grafem a tabulka. Vodorovné vodicí čáry zůstávají, takže tvar průběhu
+si zachovává měřítko, jen bez čísel.
+
+**Popisek na začátku křivky.** Vedle maxima a minima je označena i hodnota
+prvního kroku, aby bylo hned zřejmé, odkud předpověď vychází.
 
 **Směr větru nesou šipky, ne druhá osa.** Úhel na lineární ose nedává smysl,
 protože 359° a 1° by ležely na opačných koncích. Šipka letí po větru, tedy pryč
