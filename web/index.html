@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Počasí Home — ALADIN</title>
 <meta name="description" content="Osobní předpověď z modelu ALADIN ČHMÚ na 72 hodin.">
-<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0b0b0b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Počasí">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,53 +16,56 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="titles">
-    <h1 id="place">Home</h1>
-    <p class="run" id="runline">Načítám…</p>
-  </div>
-  <div class="badges">
-    <span class="badge badge-offline" id="offline" hidden>offline</span>
-    <button class="toggle" id="viewToggle" type="button" aria-pressed="false">Tabulka</button>
-  </div>
+  <h1 id="place">Home</h1>
+  <p class="when" id="when"></p>
 </header>
+
+<section class="now" aria-label="Aktuální hodina">
+  <div class="now-main">
+    <p class="now-temp" id="nowTemp">—</p>
+    <p class="now-rain" id="nowRain"></p>
+  </div>
+  <dl class="now-side">
+    <div><dt>Vítr</dt><dd id="nowWind">—</dd></div>
+    <div><dt>Směr</dt><dd id="nowDir">—</dd></div>
+    <div><dt>Oblačnost</dt><dd id="nowCloud">—</dd></div>
+  </dl>
+</section>
+
+<div class="icon-row" id="iconRow" aria-hidden="true"></div>
+
+<nav class="views" id="views" aria-label="Zobrazení">
+  <button type="button" data-view="temperature" class="is-active">Teplota</button>
+  <button type="button" data-view="wind">Vítr</button>
+  <button type="button" data-view="clouds">Oblačnost</button>
+  <button type="button" data-view="table">Tabulka</button>
+</nav>
 
 <main>
   <section id="chartView" aria-label="Meteogram na 72 hodin">
-    <ul class="legend">
-      <li><span class="swatch swatch-temp"></span>Teplota °C</li>
-      <li><span class="swatch swatch-rain"></span>Srážky mm/h</li>
-      <li><span class="swatch swatch-cloud"></span>Oblačnost %</li>
-      <li><span class="swatch swatch-wind"></span>Vítr m/s a směr</li>
-    </ul>
-    <p class="summary" id="summary"></p>
-    <div class="chart-wrap">
-      <div class="scroller" id="scroller">
-        <svg id="meteogram" role="img" aria-labelledby="chartTitle"></svg>
-      </div>
-      <svg id="axis" class="axis-svg" aria-hidden="true"></svg>
-    </div>
+    <svg id="chart" role="img" aria-labelledby="chartTitle"></svg>
     <p id="chartTitle" class="sr-only">
-      Meteogram na 72 hodin: teplota, srážky, oblačnost, rychlost a směr větru.
-      Stejné hodnoty jsou dostupné v tabulce po přepnutí tlačítkem Tabulka.
+      Meteogram na 72 hodin. Stejné hodnoty jsou dostupné v tabulce po přepnutí
+      tlačítkem Tabulka.
     </p>
-    <div class="readout" id="readout" data-hint="Přejetím po grafu zobrazíte hodnoty pro danou hodinu."></div>
+    <p class="readout" id="readout"></p>
   </section>
 
   <section id="tableView" hidden aria-label="Tabulka hodnot">
     <div class="table-wrap">
-    <table id="dataTable">
-      <caption class="sr-only">Hodinové hodnoty předpovědi</caption>
-      <thead>
-        <tr>
-          <th scope="col">Čas</th>
-          <th scope="col">Teplota<br><span class="unit">°C</span></th>
-          <th scope="col">Srážky<br><span class="unit">mm/h</span></th>
-          <th scope="col">Oblačnost<br><span class="unit">%</span></th>
-          <th scope="col">Vítr<br><span class="unit">m/s · °</span></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+      <table id="dataTable">
+        <caption class="sr-only">Hodinové hodnoty předpovědi</caption>
+        <thead>
+          <tr>
+            <th scope="col">Čas</th>
+            <th scope="col">Teplota<br><span class="unit">°C</span></th>
+            <th scope="col">Srážky<br><span class="unit">mm/h</span></th>
+            <th scope="col">Oblačnost<br><span class="unit">%</span></th>
+            <th scope="col">Vítr<br><span class="unit">m/s · °</span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
   </section>
 
@@ -71,8 +73,8 @@
 </main>
 
 <footer>
-  <p>Zdroj dat: ČHMÚ, model ALADIN (CC BY 4.0)</p>
-  <p id="updated"></p>
+  <p id="runline"></p>
+  <p>Zdroj dat: ČHMÚ, model ALADIN (CC BY 4.0) <span class="badge" id="offline" hidden>offline</span></p>
 </footer>
 
 <script src="app.js"></script>

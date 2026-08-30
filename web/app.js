@@ -1,31 +1,20 @@
-/* Meteogram for a single location.
-
-   The plot lives in one wide SVG inside a horizontal scroller, so all four
-   panels always share the same time axis. The y-axis labels sit in a second,
-   fixed SVG on top of the scroller: on a phone the chart is scrolled most of
-   the time, and an axis that scrolls away is an axis nobody can read. */
+/* Meteogram modelled on aladinonline.oblacno.cz: a current-hour block, a row of
+   hourly weather icons and one chart that switches between views. The whole
+   72 hours fit the screen width, so nothing has to be scrolled to be seen. */
 "use strict";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-const HOUR_W = 15;
-const PAD_L = 40;
-const PAD_R = 14;
-const PAD_T = 10;
-
-const PANELS = {
-  temp: { top: 24, height: 116 },
-  rain: { top: 174, height: 72 },
-  cloud: { top: 280, height: 26 },
-  wind: { top: 340, height: 70 },
-};
-const ARROW_Y = PANELS.wind.top + PANELS.wind.height + 14;
-const AXIS_Y = ARROW_Y + 14;
-const SVG_H = AXIS_Y + 30;
+const PAD_L = 30;   // °C / m/s / % labels
+const PAD_R = 30;   // mm labels
+const PAD_T = 14;
+const PLOT_H = 220;
+const AXIS_H = 30;
+const SVG_H = PAD_T + PLOT_H + AXIS_H;
 
 const DAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
 
-const state = { series: [], fromCache: false };
+const state = { series: [], view: "temperature", fromCache: false, generatedAt: 0 };
 
 function el(name, attrs = {}, parent = null) {
   const node = document.createElementNS(SVG_NS, name);
@@ -39,9 +28,10 @@ function niceTicks(min, max, count) {
   const rough = span / count;
   const magnitude = 10 ** Math.floor(Math.log10(rough));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((s) => s >= rough) || magnitude * 10;
-  const start = Math.floor(min / step) * step;
   const ticks = [];
-  for (let value = start; value <= max + step / 2; value += step) ticks.push(Number(value.toFixed(6)));
+  for (let v = Math.ceil(min / step) * step; v <= max + step / 2; v += step) {
+    ticks.push(Number(v.toFixed(6)));
+  }
   return ticks;
 }
 
@@ -49,207 +39,346 @@ function hhmm(date) {
   return String(date.getHours()).padStart(2, "0") + ":00";
 }
 
-/* ---------- scales ---------- */
+/* ---------- smoothing ---------- */
 
-function linearPanel(panel, lo, hi) {
-  const base = panel.top + panel.height;
-  return { ...panel, base, scale: (v) => base - ((v - lo) / (hi - lo || 1)) * panel.height };
-}
-
-function buildScales(series) {
-  const temps = series.map((row) => row.t2m);
-  const tempTicks = niceTicks(Math.min(...temps), Math.max(...temps), 4);
-  const temp = linearPanel(
-    PANELS.temp,
-    Math.min(...temps, tempTicks[0]),
-    Math.max(...temps, tempTicks[tempTicks.length - 1])
-  );
-
-  const rainMax = Math.max(1, ...series.map((row) => row.precip_mm));
-  const rainTicks = niceTicks(0, rainMax, 3);
-  const rain = linearPanel(PANELS.rain, 0, Math.max(rainMax, rainTicks[rainTicks.length - 1]));
-
-  const windMax = Math.max(2, ...series.map((row) => row.wind_ms));
-  const windTicks = niceTicks(0, windMax, 2);
-  const wind = linearPanel(PANELS.wind, 0, Math.max(windMax, windTicks[windTicks.length - 1]));
-
-  return {
-    temp: { ...temp, ticks: tempTicks, format: (t) => t.toFixed(0) },
-    rain: { ...rain, ticks: rainTicks, format: (t) => (t > 0 && t < 1 ? t.toFixed(1) : t.toFixed(0)) },
-    cloud: { ...PANELS.cloud },
-    wind: { ...wind, ticks: windTicks, format: (t) => t.toFixed(0) },
-  };
-}
-
-/* ---------- plot ---------- */
-
-function drawPlot(series, scales) {
-  const svg = document.getElementById("meteogram");
-  svg.textContent = "";
-  const width = PAD_L + series.length * HOUR_W + PAD_R;
-  const right = PAD_L + series.length * HOUR_W;
-  svg.setAttribute("width", width);
-  svg.setAttribute("height", SVG_H);
-  svg.setAttribute("viewBox", `0 0 ${width} ${SVG_H}`);
-  const x = (index) => PAD_L + index * HOUR_W + HOUR_W / 2;
-
-  drawNightBands(svg, series, x);
-  for (const key of ["temp", "rain", "wind"]) {
-    for (const tick of scales[key].ticks) {
-      el("line", { class: "grid-line", x1: PAD_L, y1: scales[key].scale(tick), x2: right, y2: scales[key].scale(tick) }, svg);
+/* Monotone cubic interpolation (Fritsch-Carlson). The reference draws a
+   spline, and on hourly data a polyline reads as noisy steps - but a plain
+   Catmull-Rom overshoots, which showed as cloud cover above 100 % and below
+   zero. A monotone spline cannot leave the range of the data. */
+function splinePath(points, close) {
+  const n = points.length;
+  if (n < 2) return "";
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  const dx = [];
+  const slope = [];
+  for (let i = 0; i < n - 1; i++) {
+    dx[i] = xs[i + 1] - xs[i];
+    slope[i] = (ys[i + 1] - ys[i]) / (dx[i] || 1);
+  }
+  const m = new Array(n);
+  m[0] = slope[0];
+  m[n - 1] = slope[n - 2];
+  for (let i = 1; i < n - 1; i++) {
+    if (slope[i - 1] * slope[i] <= 0) {
+      m[i] = 0;
+    } else {
+      const w1 = 2 * dx[i] + dx[i - 1];
+      const w2 = dx[i] + 2 * dx[i - 1];
+      m[i] = (w1 + w2) / (w1 / slope[i - 1] + w2 / slope[i]);
     }
   }
+  let d = `M ${xs[0]},${ys[0]}`;
+  for (let i = 0; i < n - 1; i++) {
+    const h = dx[i] / 3;
+    d += ` C ${xs[i] + h},${ys[i] + m[i] * h} ${xs[i + 1] - h},${ys[i + 1] - m[i + 1] * h} ${xs[i + 1]},${ys[i + 1]}`;
+  }
+  if (close) d += ` L ${xs[n - 1]},${close} L ${xs[0]},${close} Z`;
+  return d;
+}
 
-  drawTemperature(svg, series, x, scales.temp);
-  drawRain(svg, series, x, scales.rain, right);
-  drawCloud(svg, series, x, scales.cloud);
-  drawWind(svg, series, x, scales.wind, right);
-  drawTimeAxis(svg, series, x, right);
+/* ---------- weather icons ---------- */
+
+function iconKind(row) {
+  const day = row.date.getHours() >= 6 && row.date.getHours() < 21;
+  if (row.precip_mm >= 0.2) return row.t2m <= 0.5 ? "snow" : "rain";
+  if (row.cloud_pct >= 85) return "overcast";
+  if (row.cloud_pct >= 35) return day ? "partly-day" : "partly-night";
+  return day ? "clear-day" : "clear-night";
+}
+
+const SUN = "#eda100";
+const MOON = "#c3c2b7";
+const CLOUD = "#8f8e86";
+
+function drawIcon(kind, size) {
+  const svg = el("svg", { width: size, height: size, viewBox: "0 0 24 24" });
+  const sun = (cx, cy, r) => {
+    el("circle", { cx, cy, r, fill: SUN }, svg);
+    for (let a = 0; a < 8; a++) {
+      const t = (a * Math.PI) / 4;
+      el("line", {
+        x1: cx + Math.cos(t) * (r + 1.6), y1: cy + Math.sin(t) * (r + 1.6),
+        x2: cx + Math.cos(t) * (r + 3.4), y2: cy + Math.sin(t) * (r + 3.4),
+        stroke: SUN, "stroke-width": 1.6, "stroke-linecap": "round",
+      }, svg);
+    }
+  };
+  const moon = (cx, cy, r) => {
+    const path = el("path", {
+      d: `M ${cx + r * 0.5},${cy - r} a ${r},${r} 0 1,0 ${r * 0.75},${r * 1.7} a ${r * 0.95},${r * 0.95} 0 1,1 ${-r * 0.75},${-r * 1.7} Z`,
+      fill: MOON,
+    }, svg);
+    return path;
+  };
+  const cloud = (dy, fill) => {
+    el("path", {
+      d: `M 6.5,${17 + dy} a 3.6,3.6 0 0,1 0.4,-7.2 a 4.6,4.6 0 0,1 8.7,-1.2 a 3.6,3.6 0 0,1 1.2,7 Z`,
+      fill: fill || CLOUD,
+    }, svg);
+  };
+
+  switch (kind) {
+    case "clear-day": sun(12, 12, 4.6); break;
+    case "clear-night": moon(12, 12, 5); break;
+    case "partly-day": sun(15.5, 8, 3.4); cloud(0); break;
+    case "partly-night": moon(15.5, 8, 3.6); cloud(0); break;
+    case "overcast": cloud(0, "#6f6e68"); cloud(-3, CLOUD); break;
+    case "rain":
+      cloud(-2);
+      for (const x of [8.5, 12, 15.5]) {
+        el("line", { x1: x, y1: 17, x2: x - 1.2, y2: 21, stroke: "#3987e5", "stroke-width": 1.6, "stroke-linecap": "round" }, svg);
+      }
+      break;
+    case "snow":
+      cloud(-2);
+      for (const x of [8.5, 12, 15.5]) {
+        el("circle", { cx: x, cy: 19.5, r: 1.1, fill: "#c3c2b7" }, svg);
+      }
+      break;
+  }
+  return svg;
+}
+
+function drawIconRow(series) {
+  const row = document.getElementById("iconRow");
+  row.textContent = "";
+  const width = row.clientWidth || 340;
+  const size = 22;
+  // Fit whole icons across the row; step up in whole hours so the marks stay
+  // on a regular grid rather than drifting against the chart below.
+  const fit = Math.max(4, Math.floor((width + 2) / (size + 2)));
+  const step = Math.max(3, Math.ceil(series.length / fit));
+  for (let i = 0; i < series.length; i += step) {
+    row.appendChild(drawIcon(iconKind(series[i]), size));
+  }
+}
+
+/* ---------- chart views ---------- */
+
+const VIEWS = {
+  temperature: {
+    label: "Teplota",
+    unit: "°C",
+    value: (row) => row.t2m,
+    color: "var(--temp-line)",
+    fill: "var(--temp)",
+    pad: [2, 4],
+    withRain: true,
+    format: (v) => v.toFixed(1),
+  },
+  wind: {
+    label: "Vítr",
+    unit: "m/s",
+    value: (row) => row.wind_ms,
+    color: "var(--wind)",
+    fill: "var(--wind)",
+    pad: [0, 2],
+    zeroBased: true,
+    arrows: true,
+    format: (v) => v.toFixed(1),
+  },
+  clouds: {
+    label: "Oblačnost",
+    unit: "%",
+    value: (row) => row.cloud_pct,
+    color: "var(--cloud)",
+    fill: "var(--cloud)",
+    fixed: [0, 100],
+    format: (v) => String(Math.round(v)),
+  },
+};
+
+function drawChart(series, viewName) {
+  const view = VIEWS[viewName];
+  const svg = document.getElementById("chart");
+  svg.textContent = "";
+  const width = Math.max(svg.clientWidth || 340, 240);
+  svg.setAttribute("viewBox", `0 0 ${width} ${SVG_H}`);
+  svg.setAttribute("height", SVG_H);
+
+  const left = PAD_L;
+  const right = width - PAD_R;
+  const base = PAD_T + PLOT_H;
+  const x = (i) => left + (i * (right - left)) / (series.length - 1);
+
+  const values = series.map(view.value);
+  let lo, hi;
+  if (view.fixed) {
+    [lo, hi] = view.fixed;
+  } else if (view.zeroBased) {
+    lo = 0;
+    hi = Math.max(...values) + view.pad[1];
+  } else {
+    lo = Math.min(...values) - view.pad[0];
+    hi = Math.max(...values) + view.pad[1];
+  }
+  const y = (v) => base - ((v - lo) / (hi - lo || 1)) * PLOT_H;
+
+  drawNightBands(svg, series, x, base);
+
+  for (const tick of niceTicks(lo, hi, 4)) {
+    el("line", { class: "grid-line", x1: left, y1: y(tick), x2: right, y2: y(tick) }, svg);
+    el("text", { class: "tick", x: left - 5, y: y(tick) + 3, "text-anchor": "end" }, svg)
+      .textContent = view.format(tick);
+  }
+
+  const points = series.map((row, i) => [x(i), y(view.value(row))]);
+  const areaFill = el("path", { d: splinePath(points, base), fill: view.fill, opacity: 0.55 }, svg);
+  areaFill.setAttribute("stroke", "none");
+  el("path", { d: splinePath(points, null), fill: "none", stroke: view.color, "stroke-width": 2 }, svg);
+
+  if (view.withRain) drawRain(svg, series, x, base, right);
+  if (view.arrows) drawArrows(svg, series, x, base);
+  labelExtremes(svg, series, view, x, y);
+  drawTimeAxis(svg, series, x, base, left, right);
+  drawNow(svg, series, x, base);
   attachCursor(svg, series, x, width);
 }
 
-function drawNightBands(svg, series, x) {
+function drawNightBands(svg, series, x, base) {
   let start = null;
-  series.forEach((row, index) => {
+  series.forEach((row, i) => {
     const hour = row.date.getHours();
-    const isNight = hour < 6 || hour >= 21;
-    if (isNight && start === null) start = index;
-    const last = index === series.length - 1;
-    if ((!isNight || last) && start !== null) {
-      const from = x(start) - HOUR_W / 2;
-      const to = isNight && last ? x(index) + HOUR_W / 2 : x(index) - HOUR_W / 2;
-      el("rect", { class: "night-band", x: from, y: PAD_T, width: Math.max(to - from, 0), height: AXIS_Y - PAD_T }, svg);
+    const night = hour < 6 || hour >= 21;
+    if (night && start === null) start = i;
+    const last = i === series.length - 1;
+    if ((!night || last) && start !== null) {
+      const from = x(start);
+      const to = x(i);
+      el("rect", { class: "night-band", x: from, y: PAD_T, width: Math.max(to - from, 0), height: base - PAD_T }, svg);
       start = null;
     }
   });
 }
 
-function drawTemperature(svg, series, x, panel) {
-  const values = series.map((row) => row.t2m);
-  const points = series.map((row, index) => `${x(index)},${panel.scale(row.t2m)}`).join(" ");
-  el("polygon", {
-    class: "temp-area",
-    points: `${x(0)},${panel.base} ${points} ${x(series.length - 1)},${panel.base}`,
-  }, svg);
-  el("polyline", { class: "temp-line", points }, svg);
+/* Precipitation keeps its own labelled scale on the right: sharing the
+   temperature scale would make the columns unreadable as millimetres. */
+function drawRain(svg, series, x, base, right) {
+  const max = Math.max(1, ...series.map((r) => r.precip_mm));
+  const ticks = niceTicks(0, max, 3).filter((t) => t > 0);
+  const top = Math.max(max, ticks[ticks.length - 1] || max);
+  const height = PLOT_H * 0.55;
+  const scale = (v) => (v / top) * height;
+  const spacing = (x(1) - x(0)) || 4;
+  const barW = Math.max(1.5, spacing * 0.62);
 
-  // Direct labels for the extremes only; never a number on every point.
-  const hottest = values.indexOf(Math.max(...values));
-  const coldest = values.indexOf(Math.min(...values));
-  for (const index of [hottest, coldest]) {
-    el("circle", { class: "temp-dot", cx: x(index), cy: panel.scale(values[index]), r: 3 }, svg);
-    el("text", {
-      class: "value-label",
-      x: x(index),
-      y: panel.scale(values[index]) + (index === hottest ? -8 : 15),
-      "text-anchor": "middle",
-    }, svg).textContent = `${values[index].toFixed(1)}`;
-  }
-}
-
-function drawRain(svg, series, x, panel, right) {
-  el("line", { class: "axis-line", x1: PAD_L, y1: panel.base, x2: right, y2: panel.base }, svg);
-  const barW = HOUR_W - 3; // leaves 3px of surface between neighbouring bars
-  series.forEach((row, index) => {
+  series.forEach((row, i) => {
     if (row.precip_mm <= 0) return;
-    const height = Math.max(panel.base - panel.scale(row.precip_mm), 2);
-    el("rect", {
-      class: "rain-bar",
-      x: x(index) - barW / 2, y: panel.base - height, width: barW, height,
-      rx: Math.min(4, barW / 2), ry: Math.min(4, height / 2),
-    }, svg);
+    const h = Math.max(scale(row.precip_mm), 1.5);
+    el("rect", { class: "rain-bar", x: x(i) - barW / 2, y: base - h, width: barW, height: h, rx: Math.min(1.5, barW / 2) }, svg);
   });
-}
 
-function drawCloud(svg, series, x, panel) {
-  // Magnitude over time in a single row: one hue, more cloud is darker.
-  series.forEach((row, index) => {
-    const shade = Math.min(Math.max(row.cloud_pct / 100, 0), 1);
-    el("rect", {
-      x: x(index) - HOUR_W / 2 + 1, y: panel.top,
-      width: HOUR_W - 2, height: panel.height,
-      fill: `color-mix(in srgb, var(--cloud-1) ${Math.round(shade * 100)}%, var(--cloud-0))`,
-    }, svg);
-  });
-  for (let index = 0; index < series.length; index += 6) {
-    el("text", { class: "tick", x: x(index), y: panel.top + panel.height + 13, "text-anchor": "middle" }, svg)
-      .textContent = String(series[index].cloud_pct);
+  for (const tick of ticks) {
+    el("text", {
+      class: "tick", x: right + 5, y: base - scale(tick) + 3, fill: "var(--rain)",
+    }, svg).textContent = tick < 1 ? tick.toFixed(1) : String(tick);
   }
+  el("text", { class: "tick", x: right + 5, y: PAD_T + 8, fill: "var(--rain)" }, svg).textContent = "mm";
 }
 
-function drawWind(svg, series, x, panel, right) {
-  el("line", { class: "axis-line", x1: PAD_L, y1: panel.base, x2: right, y2: panel.base }, svg);
-  el("polyline", {
-    class: "wind-line",
-    points: series.map((row, index) => `${x(index)},${panel.scale(row.wind_ms)}`).join(" "),
-  }, svg);
-
-  // Direction is angular, so it gets arrows on their own row rather than a
-  // second y scale. The arrow flies with the wind, away from where it comes from.
-  for (let index = 1; index < series.length; index += 3) {
-    const cx = x(index);
-    const angle = ((series[index].wind_dir + 180) % 360) * (Math.PI / 180);
-    const dx = Math.sin(angle) * 5;
-    const dy = -Math.cos(angle) * 5;
-    const group = el("g", { class: "wind-arrow" }, svg);
-    el("line", { x1: cx - dx, y1: ARROW_Y - dy, x2: cx + dx, y2: ARROW_Y + dy }, group);
+function drawArrows(svg, series, x, base) {
+  const step = Math.max(3, Math.round(series.length / 16));
+  for (let i = 1; i < series.length; i += step) {
+    const cx = x(i);
+    const cy = base - 12;
+    const angle = ((series[i].wind_dir + 180) % 360) * (Math.PI / 180);
+    const dx = Math.sin(angle) * 4.5;
+    const dy = -Math.cos(angle) * 4.5;
+    const g = el("g", { class: "wind-arrow" }, svg);
+    el("line", { x1: cx - dx, y1: cy - dy, x2: cx + dx, y2: cy + dy }, g);
     el("polyline", {
       points: [
-        `${cx + dx - dy * 0.45 - dx * 0.45},${ARROW_Y + dy + dx * 0.45 - dy * 0.45}`,
-        `${cx + dx},${ARROW_Y + dy}`,
-        `${cx + dx + dy * 0.45 - dx * 0.45},${ARROW_Y + dy - dx * 0.45 - dy * 0.45}`,
+        `${cx + dx - dy * 0.5 - dx * 0.5},${cy + dy + dx * 0.5 - dy * 0.5}`,
+        `${cx + dx},${cy + dy}`,
+        `${cx + dx + dy * 0.5 - dx * 0.5},${cy + dy - dx * 0.5 - dy * 0.5}`,
       ].join(" "),
-    }, group);
+    }, g);
   }
 }
 
-function drawTimeAxis(svg, series, x, right) {
-  el("line", { class: "axis-line", x1: PAD_L, y1: AXIS_Y, x2: right, y2: AXIS_Y }, svg);
-  series.forEach((row, index) => {
+/* Local extremes get a direct label, as in the reference; a number on every
+   point would be unreadable at this density. */
+function labelExtremes(svg, series, view, x, y) {
+  const values = series.map(view.value);
+  const window = 3;
+  const found = [];
+  for (let i = window; i < values.length - window; i++) {
+    const slice = values.slice(i - window, i + window + 1);
+    const isMax = values[i] === Math.max(...slice);
+    const isMin = values[i] === Math.min(...slice);
+    if (!isMax && !isMin) continue;
+    found.push({ index: i, value: values[i], isMax });
+  }
+
+  // Label the most pronounced extremes first, then fill in while there is room.
+  // Left-to-right greedy would spend the space on a mild early bump and drop
+  // the day's peak.
+  const middle = (Math.min(...values) + Math.max(...values)) / 2;
+  found.sort((a, b) => Math.abs(b.value - middle) - Math.abs(a.value - middle));
+  const placed = [];
+  for (const point of found) {
+    if (placed.length >= 5) break;
+    // Labels are spaced in pixels, not in hours: at this density two extremes
+    // six hours apart still print on top of each other.
+    if (placed.some((other) => Math.abs(x(point.index) - x(other.index)) < 62)) continue;
+    placed.push(point);
+  }
+
+  for (const point of placed) {
+    const top = PAD_T + 10;
+    const bottom = PAD_T + PLOT_H - 4;
+    // A peak that touches the top of the plot has no room above it, so its
+    // label drops below the curve rather than printing over it.
+    const above = point.isMax && y(point.value) - 7 >= top;
+    const below = !point.isMax && y(point.value) + 14 <= bottom;
+    const offset = above ? -7 : below ? 14 : point.isMax ? 14 : -7;
+    el("text", {
+      class: "value-label",
+      x: Math.min(Math.max(x(point.index), PAD_L + 18), x(series.length - 1) - 18),
+      y: Math.min(Math.max(y(point.value) + offset, top), bottom),
+      "text-anchor": "middle",
+    }, svg).textContent = `${view.format(point.value)} ${view.unit}`;
+  }
+}
+
+function drawTimeAxis(svg, series, x, base, left, right) {
+  el("line", { class: "axis-line", x1: left, y1: base, x2: right, y2: base }, svg);
+  series.forEach((row, i) => {
     const hour = row.date.getHours();
     if (hour % 6 !== 0) return;
-    el("line", { class: "grid-line", x1: x(index), y1: AXIS_Y, x2: x(index), y2: AXIS_Y + 4 }, svg);
-    el("text", { class: "tick", x: x(index), y: AXIS_Y + 15, "text-anchor": "middle" }, svg)
+    el("line", { class: "grid-line", x1: x(i), y1: PAD_T, x2: x(i), y2: base + 4 }, svg);
+    el("text", { class: "tick", x: x(i), y: base + 15, "text-anchor": "middle" }, svg)
       .textContent = String(hour).padStart(2, "0");
     if (hour === 0) {
-      el("text", { class: "day-label", x: x(index), y: AXIS_Y + 27, "text-anchor": "middle" }, svg)
+      el("text", { class: "day-label", x: x(i), y: base + 27, "text-anchor": "middle" }, svg)
         .textContent = `${DAYS[row.date.getDay()]} ${row.date.getDate()}.${row.date.getMonth() + 1}.`;
     }
   });
 }
 
-/* ---------- fixed axis overlay ---------- */
-
-function drawAxis(scales) {
-  const svg = document.getElementById("axis");
-  svg.textContent = "";
-  svg.setAttribute("width", PAD_L);
-  svg.setAttribute("height", SVG_H);
-  svg.setAttribute("viewBox", `0 0 ${PAD_L} ${SVG_H}`);
-  el("rect", { class: "axis-backdrop", x: 0, y: 0, width: PAD_L, height: SVG_H }, svg);
-
-  for (const key of ["temp", "rain", "wind"]) {
-    for (const tick of scales[key].ticks) {
-      el("text", {
-        class: "tick", x: PAD_L - 5, y: scales[key].scale(tick) + 3, "text-anchor": "end",
-      }, svg).textContent = scales[key].format(tick);
-    }
-  }
-  el("text", { class: "tick", x: PAD_L - 5, y: scales.cloud.top + scales.cloud.height / 2 + 3, "text-anchor": "end" }, svg)
-    .textContent = "%";
+function drawNow(svg, series, x, base) {
+  const now = Date.now();
+  const first = series[0].date.getTime();
+  const last = series[series.length - 1].date.getTime();
+  if (now < first || now > last) return;
+  const position = ((now - first) / (last - first)) * (series.length - 1);
+  el("line", { class: "now-line", x1: x(position), y1: PAD_T, x2: x(position), y2: base }, svg);
+  el("text", { class: "now-label", x: x(position) + 3, y: PAD_T + 8 }, svg).textContent = "teď";
 }
 
-/* ---------- cursor and readout ---------- */
+/* ---------- cursor ---------- */
 
 function attachCursor(svg, series, x, width) {
-  const cursor = el("line", { class: "cursor-line", x1: 0, y1: PAD_T, x2: 0, y2: AXIS_Y, visibility: "hidden" }, svg);
+  const base = PAD_T + PLOT_H;
+  const cursor = el("line", { class: "cursor-line", x1: 0, y1: PAD_T, x2: 0, y2: base, visibility: "hidden" }, svg);
   const readout = document.getElementById("readout");
-  const hint = readout.dataset.hint;
 
   const show = (event) => {
     const rect = svg.getBoundingClientRect();
     const offset = ((event.clientX - rect.left) / rect.width) * width;
-    const index = Math.min(series.length - 1, Math.max(0, Math.round((offset - PAD_L - HOUR_W / 2) / HOUR_W)));
+    const spacing = (x(1) - x(0)) || 1;
+    const index = Math.min(series.length - 1, Math.max(0, Math.round((offset - x(0)) / spacing)));
     const row = series[index];
     cursor.setAttribute("visibility", "visible");
     cursor.setAttribute("x1", x(index));
@@ -265,16 +394,32 @@ function attachCursor(svg, series, x, width) {
 
   const hide = () => {
     cursor.setAttribute("visibility", "hidden");
-    readout.textContent = hint;
+    readout.textContent = "";
   };
 
   svg.addEventListener("pointermove", show);
   svg.addEventListener("pointerdown", show);
   svg.addEventListener("pointerleave", hide);
-  readout.textContent = hint;
 }
 
-/* ---------- table view ---------- */
+/* ---------- current hour, table ---------- */
+
+function currentRow(series) {
+  const now = Date.now();
+  return series.find((row) => row.date.getTime() >= now) || series[0];
+}
+
+function renderNow(series) {
+  const row = currentRow(series);
+  document.getElementById("nowTemp").textContent = `${row.t2m.toFixed(1)} °C`;
+  document.getElementById("nowRain").textContent = `${row.precip_mm.toFixed(1)} mm/h`;
+  document.getElementById("nowWind").textContent = `${row.wind_ms.toFixed(1)} m/s`;
+  document.getElementById("nowDir").textContent = `${row.wind_dir}°`;
+  document.getElementById("nowCloud").textContent = `${row.cloud_pct} %`;
+  const today = new Date().getDate() === row.date.getDate();
+  document.getElementById("when").textContent =
+    `${today ? "Dnes" : DAYS[row.date.getDay()]} ${hhmm(row.date)}`;
+}
 
 function fillTable(series) {
   const body = document.querySelector("#dataTable tbody");
@@ -301,6 +446,24 @@ function fillTable(series) {
   }
 }
 
+/* ---------- views ---------- */
+
+function selectView(name) {
+  state.view = name;
+  for (const button of document.querySelectorAll("#views button")) {
+    button.classList.toggle("is-active", button.dataset.view === name);
+  }
+  const table = name === "table";
+  document.getElementById("chartView").hidden = table;
+  document.getElementById("tableView").hidden = !table;
+  if (!table && state.series.length) drawChart(state.series, name);
+}
+
+document.getElementById("views").addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (button) selectView(button.dataset.view);
+});
+
 /* ---------- data ---------- */
 
 function formatMoment(iso) {
@@ -309,45 +472,32 @@ function formatMoment(iso) {
   });
 }
 
-/* The badge says the forecast on screen may be older than the newest run. Being
-   offline is the reliable signal: a cached fallback can also reach the page as
-   an ordinary successful response, so the header alone would miss cases. */
+/* The badge warns that what is on screen may be out of date. Age of the
+   forecast is the honest signal: navigator.onLine misreports in some
+   environments, and a cached response can reach the page looking fresh. */
 function updateOfflineBadge() {
-  document.getElementById("offline").hidden = navigator.onLine && !state.fromCache;
+  const badge = document.getElementById("offline");
+  const ageHours = state.generatedAt ? (Date.now() - state.generatedAt) / 3600e3 : 0;
+  const stale = state.fromCache || ageHours > 6;
+  badge.hidden = !stale;
+  badge.textContent = ageHours >= 1 ? `${Math.round(ageHours)} h staré` : "offline";
 }
-
-window.addEventListener("online", () => {
-  updateOfflineBadge();
-  load();
-});
-window.addEventListener("offline", updateOfflineBadge);
 
 function render(forecast, fromCache) {
   const location = forecast.locations[0];
   state.series = location.series.map((row) => ({ ...row, date: new Date(row.time) }));
-  const series = state.series;
+  state.fromCache = fromCache;
+  state.generatedAt = Date.parse(forecast.generated_at);
 
   document.getElementById("place").textContent = location.name;
   document.getElementById("runline").textContent =
-    `Běh modelu ${formatMoment(forecast.run_id)} · ${series.length} h předpovědi`;
-  document.getElementById("updated").textContent = `Aktualizováno ${formatMoment(forecast.generated_at)}`;
-  state.fromCache = fromCache;
+    `Běh modelu ${formatMoment(forecast.run_id)}, aktualizováno ${formatMoment(forecast.generated_at)}`;
   updateOfflineBadge();
 
-  const total = series.reduce((sum, row) => sum + row.precip_mm, 0);
-  document.getElementById("summary").textContent =
-    `Srážky celkem ${total.toFixed(1)} mm · teplota ${Math.min(...series.map((r) => r.t2m)).toFixed(1)} až ` +
-    `${Math.max(...series.map((r) => r.t2m)).toFixed(1)} °C`;
-
-  const scales = buildScales(series);
-  drawPlot(series, scales);
-  drawAxis(scales);
-  fillTable(series);
-
-  // Open at the current hour rather than at the start of a run made hours ago.
-  const now = Date.now();
-  const index = series.findIndex((row) => row.date.getTime() >= now);
-  if (index > 1) document.getElementById("scroller").scrollLeft = (index - 1) * HOUR_W;
+  renderNow(state.series);
+  drawIconRow(state.series);
+  fillTable(state.series);
+  selectView(state.view);
 }
 
 async function load() {
@@ -355,8 +505,6 @@ async function load() {
   try {
     const response = await fetch(url, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    // The service worker marks a cached fallback, which still reaches us as a
-    // successful response.
     render(await response.json(), response.headers.get("X-From-Cache") === "1");
   } catch (networkError) {
     const cached = await caches.match(url).catch(() => null);
@@ -370,14 +518,18 @@ async function load() {
   }
 }
 
-document.getElementById("viewToggle").addEventListener("click", (event) => {
-  const button = event.currentTarget;
-  const showTable = button.getAttribute("aria-pressed") === "false";
-  button.setAttribute("aria-pressed", String(showTable));
-  button.textContent = showTable ? "Graf" : "Tabulka";
-  document.getElementById("chartView").hidden = showTable;
-  document.getElementById("tableView").hidden = !showTable;
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (!state.series.length) return;
+    drawIconRow(state.series);
+    if (state.view !== "table") drawChart(state.series, state.view);
+  }, 150);
 });
+
+window.addEventListener("online", () => { updateOfflineBadge(); load(); });
+window.addEventListener("offline", updateOfflineBadge);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
