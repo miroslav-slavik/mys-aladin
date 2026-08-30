@@ -15,6 +15,7 @@
   --rain: #3987e5;
   --wind: #199e70;
   --cloud: #8f8e86;
+  --now: #f2d98a;
 
   --night: rgba(0, 0, 0, 0.45);
 }
@@ -152,17 +153,14 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 
 main { padding: 0 8px; }
 
-#chart { display: block; width: 100%; touch-action: pan-y; }
-
-.readout {
-  margin: 8px 2px 0;
-  min-height: 22px;
-  font-size: 15px;
-  color: var(--ink-2);
+#chart {
+  display: block;
+  width: 100%;
+  touch-action: pan-y;
+  /* A horizontal drag reads the chart; it must not start selecting labels. */
+  user-select: none;
+  -webkit-user-select: none;
 }
-
-.readout strong { color: var(--ink); font-weight: 600; }
-.readout span + span { margin-left: 10px; }
 
 /* Chart chrome ------------------------------------------------------- */
 
@@ -173,8 +171,15 @@ main { padding: 0 8px; }
 .night-band { fill: var(--night); }
 .value-label { fill: var(--ink); font-size: 13px; }
 .cursor-line { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 3; }
-.now-line { stroke: var(--ink-2); stroke-width: 1; }
-.now-label { fill: var(--ink-2); font-size: 12px; }
+.now-line { stroke: var(--now); stroke-width: 1; }
+.now-label { fill: var(--now); font-size: 12px; }
+
+/* Tooltip by the dashed cursor: date on the first line, time under it. The
+   values themselves go to the header block. */
+.tip-box { fill: rgba(20, 20, 19, 0.92); stroke: var(--axis); stroke-width: 1; }
+.tip-date { fill: var(--ink-2); font-size: 12px; }
+.tip-time { fill: var(--ink); font-size: 14px; font-weight: 600; }
+.tip { pointer-events: none; }
 
 .rain-bar { fill: var(--rain); }
 .wind-arrow { stroke: var(--ink-2); stroke-width: 1.1; fill: none; }

@@ -42,9 +42,9 @@ Rozsah řídí konstanta `CHART_HOURS` v `web/app.js`.
 
 **Svislé osy nemají popisky.** Na přání uživatele zmizely jak stupně vlevo, tak
 milimetry vpravo. Graf tím získal obě postranní pásma a kreslí se přes celou
-šířku karty. Konkrétní hodnoty nese trojice přímých popisků v křivce, dotykový
-řádek pod grafem a tabulka. Vodorovné vodicí čáry zůstávají, takže tvar průběhu
-si zachovává měřítko, jen bez čísel.
+šířku karty. Konkrétní hodnoty nese trojice přímých popisků v křivce, hlavička
+při dotyku a tabulka. Vodorovné vodicí čáry zůstávají, takže tvar průběhu si
+zachovává měřítko, jen bez čísel.
 
 **Popisek na začátku křivky.** Vedle maxima a minima je označena i hodnota
 prvního kroku, aby bylo hned zřejmé, odkud předpověď vychází.
@@ -70,12 +70,25 @@ jako SVG přímo v kódu, takže nejsou potřeba žádné obrázkové soubory.
 Aplikace má jen tmavou podobu, stejně jako předloha. Barvy jsou tmavé kroky
 ověřené palety a trojice akcentů prošla kontrolou odstupu pro barvosleposti.
 
+## Dotyk v grafu
+
+Přejetím prstem nebo myší se zobrazí svislá čárkovaná čára a hodnoty vybrané
+hodiny se objeví **v hlavičce**, tedy tam, kde se čtou i bez dotyku. U čáry
+zůstává jen bublina s datem a pod ním s časem. Po zvednutí prstu se hlavička
+vrací na aktuální hodinu.
+
+Samostatný řádek s hodnotami pod grafem tím zanikl: dvě místa se stejnými čísly
+si konkurovala a hodnoty byly daleko od velkého údaje nahoře.
+
+Hlavička neuvádí směr větru. Úhel ve stupních se špatně čte a v grafu ho lépe
+ukáží šipky v pohledu **Vítr**; v tabulce zůstává číselně.
+
+Svislá linka **teď** je světle žlutá, aby ji nešlo splést s čárkovaným kurzorem.
+
 ## Přístupnost a ovládání
 
-Přejetím myší nebo prstem se zobrazí svislý kurzor a řádek s hodnotami pro danou
-hodinu. Tlačítko **Tabulka** přepne na všech 72 řádků, takže hodnoty jsou
-dostupné i bez čtení grafu. Noc je v grafu podbarvená a svislá linka **teď**
-ukazuje aktuální hodinu.
+Tlačítko **Tabulka** přepne na všech 72 řádků, takže hodnoty jsou dostupné
+i bez čtení grafu. Noc je v grafu podbarvená.
 
 ## Offline a instalace
 

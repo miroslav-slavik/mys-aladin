@@ -7,7 +7,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 
 // The vertical axes carry no numbers, so the gutters only keep the curve off
 // the edge of the card. Values are read from the labelled extremes, from the
-// touch readout, or from the table.
+// header while the chart is touched, or from the table.
 const PAD_L = 8;
 const PAD_R = 8;
 const PAD_T = 14;
@@ -393,10 +393,35 @@ function drawNow(svg, series, x, base) {
 
 /* ---------- cursor ---------- */
 
+/* Touching the chart moves the reading in the header block to the hour under
+   the finger, so the values stay in the one place the eye already knows. The
+   tooltip by the line only carries the date and time; lifting the finger puts
+   the header back on the current hour. */
 function attachCursor(svg, series, x, width) {
   const base = PAD_T + PLOT_H;
   const cursor = el("line", { class: "cursor-line", x1: 0, y1: PAD_T, x2: 0, y2: base, visibility: "hidden" }, svg);
-  const readout = document.getElementById("readout");
+  const tip = el("g", { class: "tip", visibility: "hidden" }, svg);
+  const box = el("rect", { class: "tip-box", rx: 6, ry: 6 }, tip);
+  const dateText = el("text", { class: "tip-date", x: 0, y: 0 }, tip);
+  const timeText = el("text", { class: "tip-time", x: 0, y: 0 }, tip);
+
+  const placeTip = (row, cx) => {
+    dateText.textContent = `${DAYS[row.date.getDay()]} ${row.date.getDate()}.${row.date.getMonth() + 1}.`;
+    timeText.textContent = hhmm(row.date);
+    const w = Math.max(dateText.getComputedTextLength(), timeText.getComputedTextLength()) + 14;
+    const h = 38;
+    const left = cx + 8 + w > width - 2 ? cx - 8 - w : cx + 8;
+    const top = PAD_T + 2;
+    box.setAttribute("x", left);
+    box.setAttribute("y", top);
+    box.setAttribute("width", w);
+    box.setAttribute("height", h);
+    dateText.setAttribute("x", left + 7);
+    dateText.setAttribute("y", top + 15);
+    timeText.setAttribute("x", left + 7);
+    timeText.setAttribute("y", top + 31);
+    tip.setAttribute("visibility", "visible");
+  };
 
   const show = (event) => {
     const rect = svg.getBoundingClientRect();
@@ -407,22 +432,20 @@ function attachCursor(svg, series, x, width) {
     cursor.setAttribute("visibility", "visible");
     cursor.setAttribute("x1", x(index));
     cursor.setAttribute("x2", x(index));
-    readout.innerHTML =
-      `<strong>${DAYS[row.date.getDay()]} ${hhmm(row.date)}</strong>` +
-      `<span>${row.t2m.toFixed(1)} °C</span>` +
-      `<span>${row.precip_mm.toFixed(1)} mm</span>` +
-      `<span>${row.cloud_pct} %</span>` +
-      `<span>${row.wind_ms.toFixed(1)} m/s</span>` +
-      `<span>${row.wind_dir}°</span>`;
+    placeTip(row, x(index));
+    showHeader(row);
   };
 
   const hide = () => {
     cursor.setAttribute("visibility", "hidden");
-    readout.textContent = "";
+    tip.setAttribute("visibility", "hidden");
+    renderNow(state.series);
   };
 
   svg.addEventListener("pointermove", show);
   svg.addEventListener("pointerdown", show);
+  svg.addEventListener("pointerup", hide);
+  svg.addEventListener("pointercancel", hide);
   svg.addEventListener("pointerleave", hide);
 }
 
@@ -433,16 +456,20 @@ function currentRow(series) {
   return series.find((row) => row.date.getTime() >= now) || series[0];
 }
 
-function renderNow(series) {
-  const row = currentRow(series);
+/* The header shows one hour: the current one, or the one under the finger
+   while the chart is being touched. */
+function showHeader(row) {
   document.getElementById("nowTemp").textContent = `${row.t2m.toFixed(1)} °C`;
   document.getElementById("nowRain").textContent = `${row.precip_mm.toFixed(1)} mm/h`;
   document.getElementById("nowWind").textContent = `${row.wind_ms.toFixed(1)} m/s`;
-  document.getElementById("nowDir").textContent = `${row.wind_dir}°`;
   document.getElementById("nowCloud").textContent = `${row.cloud_pct} %`;
   const today = new Date().getDate() === row.date.getDate();
   document.getElementById("when").textContent =
     `${today ? "Dnes" : DAYS[row.date.getDay()]} ${hhmm(row.date)}`;
+}
+
+function renderNow(series) {
+  showHeader(currentRow(series));
 }
 
 function fillTable(series) {
