@@ -3,7 +3,7 @@
    forecast stays in the cache as the offline fallback. */
 "use strict";
 
-const CACHE = "mys-aladin-v12";
+const CACHE = "mys-aladin-v13";
 const FORECAST = "data/forecast.json";
 
 const SHELL = [

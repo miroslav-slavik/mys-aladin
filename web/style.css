@@ -156,8 +156,11 @@ main { padding: 0 8px; }
 #chart {
   display: block;
   width: 100%;
-  touch-action: pan-y;
-  /* A horizontal drag reads the chart; it must not start selecting labels. */
+  /* The chart owns the whole gesture. With pan-y a drift up or down handed
+     the touch to the page as a scroll, which cancelled the reading. The page
+     is still scrolled from anywhere around the chart. */
+  touch-action: none;
+  /* A drag reads the chart; it must not start selecting labels. */
   user-select: none;
   -webkit-user-select: none;
 }

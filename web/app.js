@@ -459,11 +459,47 @@ function attachCursor(svg, series, x, width) {
     renderNow(state.series);
   };
 
-  svg.addEventListener("pointermove", show);
-  svg.addEventListener("pointerdown", show);
-  svg.addEventListener("pointerup", hide);
-  svg.addEventListener("pointercancel", hide);
-  svg.addEventListener("pointerleave", hide);
+  /* The finger rarely travels along a straight line, and a drift upwards or
+     downwards used to end the reading: the browser read it as a page scroll,
+     took the gesture away and cancelled the pointer. The chart therefore
+     claims the whole gesture (touch-action: none in the stylesheet) and
+     captures the pointer, so only lifting the finger ends the reading. Just
+     the horizontal position is read, so vertical movement changes nothing. */
+  let held = null;
+
+  const grab = (event) => {
+    held = event.pointerId;
+    try {
+      svg.setPointerCapture(event.pointerId);
+    } catch (ignored) {
+      // Capture is a convenience; without it the reading still works inside
+      // the chart.
+    }
+    show(event);
+  };
+
+  const release = (event) => {
+    if (held === null) return;
+    if (event.pointerId !== held) return;
+    try {
+      svg.releasePointerCapture(held);
+    } catch (ignored) {
+      // Already released, which is exactly the state we want.
+    }
+    held = null;
+    hide();
+  };
+
+  svg.addEventListener("pointerdown", grab);
+  svg.addEventListener("pointermove", (event) => {
+    if (held === null || event.pointerId === held) show(event);
+  });
+  svg.addEventListener("pointerup", release);
+  svg.addEventListener("pointercancel", release);
+  // Only a hovering mouse leaves; a held pointer keeps the reading alive.
+  svg.addEventListener("pointerleave", () => {
+    if (held === null) hide();
+  });
 }
 
 /* ---------- current hour, table ---------- */
