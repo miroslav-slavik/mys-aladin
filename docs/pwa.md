@@ -65,6 +65,10 @@ bez čísla, protože místo by zabral mírný ranní hrbol.
 Ikony počasí se odvozují z oblačnosti, srážek, teploty a denní doby. Kreslí se
 jako SVG přímo v kódu, takže nejsou potřeba žádné obrázkové soubory.
 
+Kreslí se v 32 px, aby byly na telefonu čitelné na první pohled. Kolik se jich
+do řádku vejde, tolik se jich ukáže, a krok se zaokrouhlí na celé hodiny: na
+šířce iPhonu vychází ikona po šesti hodinách.
+
 ## Vzhled
 
 Aplikace má jen tmavou podobu, stejně jako předloha. Barvy jsou tmavé kroky

@@ -170,7 +170,9 @@ function drawIconRow(fullSeries) {
   const row = document.getElementById("iconRow");
   row.textContent = "";
   const width = row.clientWidth || 340;
-  const size = 22;
+  // Big enough to read at a glance on a phone; the row then holds an icon
+  // every six hours, which is close enough to follow the chart below.
+  const size = 32;
   // Fit whole icons across the row; step up in whole hours so the marks stay
   // on a regular grid rather than drifting against the chart below.
   const fit = Math.max(4, Math.floor((width + 2) / (size + 2)));
