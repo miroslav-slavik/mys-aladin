@@ -19,7 +19,7 @@ do pěti sekund, protože se nestahuje nic.
 
 | Modul | Odpovědnost |
 |---|---|
-| `pipeline/config.py` | Místa, seznam veličin, hranice mřížky |
+| `pipeline/config.py` | Místa včetně zobrazovaného názvu, seznam veličin, hranice mřížky |
 | `pipeline/source.py` | Nalezení nejnovějšího kompletního běhu, stažení a dekomprese |
 | `pipeline/reader.py` | Čtení GRIB, extrakce bodu, převod jednotek |
 | `pipeline/build.py` | Sestavení a zápis `data/forecast.json` |

@@ -472,15 +472,20 @@ function formatMoment(iso) {
   });
 }
 
-/* The badge warns that what is on screen may be out of date. Age of the
-   forecast is the honest signal: navigator.onLine misreports in some
+/* The age of the forecast is always on screen; the badge only marks it as too
+   old to trust. Age is the honest signal: navigator.onLine misreports in some
    environments, and a cached response can reach the page looking fresh. */
-function updateOfflineBadge() {
-  const badge = document.getElementById("offline");
-  const ageHours = state.generatedAt ? (Date.now() - state.generatedAt) / 3600e3 : 0;
-  const stale = state.fromCache || ageHours > 6;
-  badge.hidden = !stale;
-  badge.textContent = ageHours >= 1 ? `${Math.round(ageHours)} h staré` : "offline";
+function formatAge(hours) {
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} min`;
+  if (hours < 24) return `${Math.round(hours)} h`;
+  return `${Math.floor(hours / 24)} d ${Math.round(hours % 24)} h`;
+}
+
+function updateAge() {
+  if (!state.generatedAt) return;
+  const hours = (Date.now() - state.generatedAt) / 3600e3;
+  document.getElementById("age").textContent = formatAge(hours);
+  document.getElementById("offline").hidden = !(state.fromCache || hours > 6);
 }
 
 function render(forecast, fromCache) {
@@ -489,10 +494,10 @@ function render(forecast, fromCache) {
   state.fromCache = fromCache;
   state.generatedAt = Date.parse(forecast.generated_at);
 
-  document.getElementById("place").textContent = location.name;
+  document.getElementById("place").textContent = location.label || location.name;
   document.getElementById("runline").textContent =
     `Běh modelu ${formatMoment(forecast.run_id)}, aktualizováno ${formatMoment(forecast.generated_at)}`;
-  updateOfflineBadge();
+  updateAge();
 
   renderNow(state.series);
   drawIconRow(state.series);
@@ -500,14 +505,16 @@ function render(forecast, fromCache) {
   selectView(state.view);
 }
 
-async function load() {
-  const url = "data/forecast.json";
+async function load(force = false) {
+  // The cache buster is for the CDN in front of Pages: without it a forced
+  // reload can be answered with the very copy the user is trying to replace.
+  const url = force ? `data/forecast.json?t=${Date.now()}` : "data/forecast.json";
   try {
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetch(url, { cache: force ? "reload" : "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     render(await response.json(), response.headers.get("X-From-Cache") === "1");
   } catch (networkError) {
-    const cached = await caches.match(url).catch(() => null);
+    const cached = await caches.match("data/forecast.json").catch(() => null);
     if (cached) {
       render(await cached.json(), true);
       return;
@@ -528,11 +535,26 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
-window.addEventListener("online", () => { updateOfflineBadge(); load(); });
-window.addEventListener("offline", updateOfflineBadge);
+window.addEventListener("online", () => load());
+window.addEventListener("offline", updateAge);
+
+// The age creeps up while the app sits open on the home screen.
+setInterval(updateAge, 60e3);
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
 }
 
 load();
+
+const refreshButton = document.getElementById("refresh");
+refreshButton.addEventListener("click", async () => {
+  refreshButton.disabled = true;
+  refreshButton.classList.add("is-busy");
+  try {
+    await load(true);
+  } finally {
+    refreshButton.disabled = false;
+    refreshButton.classList.remove("is-busy");
+  }
+});

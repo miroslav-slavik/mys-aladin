@@ -26,13 +26,18 @@ GRID_LON_MIN, GRID_LON_MAX = 12.0, 18.995
 @dataclass(frozen=True)
 class Location:
     name: str
+    """Short key, stable across renames of the label."""
+
     lat: float
     lon: float
+
+    label: str = ""
+    """What the app puts on screen; falls back to the name when empty."""
 
 
 LOCATIONS: tuple[Location, ...] = (
     # Lipnická 1450, Kyje, 198 00 Praha 9 (RUIAN address point 25225472).
-    Location("Home", 50.110113, 14.558445),
+    Location("Home", 50.110113, 14.558445, label="Kyje, Praha 9"),
 )
 
 

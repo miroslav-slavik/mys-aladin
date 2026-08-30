@@ -51,6 +51,7 @@ def build_forecast(
         "locations": [
             {
                 "name": location.name,
+                "label": location.label or location.name,
                 "lat": location.lat,
                 "lon": location.lon,
                 "series": build_series(by_field),

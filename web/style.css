@@ -55,7 +55,29 @@ body {
 }
 
 h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+
+.topbar-right { display: flex; align-items: center; gap: 8px; }
 .when { margin: 0; font-size: 15px; color: var(--ink-2); }
+
+.refresh {
+  display: grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.refresh:disabled { opacity: 0.5; }
+.refresh.is-busy svg { animation: spin 0.9s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .refresh.is-busy svg { animation: none; }
+}
 
 /* Current hour ------------------------------------------------------- */
 

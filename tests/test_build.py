@@ -11,7 +11,7 @@ import pytest
 from pipeline.build import build_forecast, build_series, read_run_id, write_forecast
 from pipeline.config import Location
 
-HOME = Location("Home", 50.110113, 14.558445)
+HOME = Location("Home", 50.110113, 14.558445, label="Kyje, Praha 9")
 
 
 def series(values: list[float], start: str = "2026-08-21T07:00", periods: int | None = None):
@@ -93,6 +93,21 @@ def test_forecast_matches_the_documented_schema():
     assert location["lat"] == pytest.approx(50.110113)
     assert location["lon"] == pytest.approx(14.558445)
     assert len(location["series"]) == 3
+
+
+def test_location_carries_a_display_label():
+    forecast = build_forecast("2026-08-21T06:00Z", {HOME: by_field()})
+
+    assert forecast["locations"][0]["label"] == "Kyje, Praha 9"
+    assert forecast["locations"][0]["name"] == "Home"
+
+
+def test_label_falls_back_to_the_name():
+    unlabelled = Location("Chata", 49.5, 15.5)
+
+    forecast = build_forecast("2026-08-21T06:00Z", {unlabelled: by_field()})
+
+    assert forecast["locations"][0]["label"] == "Chata"
 
 
 def test_written_file_round_trips(tmp_path):

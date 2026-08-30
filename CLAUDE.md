@@ -85,6 +85,7 @@ Návrh k upřesnění ve Fázi 2 podle skutečných jednotek zjištěných ve F�
   "locations": [
     {
       "name": "...",
+      "label": "text zobrazený v aplikaci",
       "lat": 0,
       "lon": 0,
       "series": [

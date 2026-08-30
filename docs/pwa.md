@@ -17,8 +17,12 @@ Aplikace se nesmí otevírat přes `file://`, protože service worker vyžaduje
 ## Rozvržení
 
 Vzorem je meteogram na `aladinonline.oblacno.cz`, podle přání uživatele.
-Obrazovka má shora dolů čtyři části: hlavičku s místem a časem, blok aktuální
-hodiny s velkou teplotou, řádek hodinových ikon a jeden graf s přepínači.
+Obrazovka má shora dolů čtyři části: hlavičku s názvem místa, aktuálním časem
+a tlačítkem pro načtení znovu, blok aktuální hodiny s velkou teplotou, řádek
+hodinových ikon a jeden graf s přepínači.
+
+Název místa v hlavičce bere pole `label` z `forecast.json`, tedy „Kyje, Praha 9",
+nikoli interní klíč `name`, který zůstává „Home".
 
 Celých 72 hodin se vejde na šířku displeje, takže se nikam neposouvá a celý
 průběh je vidět najednou. To je proti dřívější verzi zásadní změna: ta měla graf
@@ -69,12 +73,18 @@ Service worker ukládá skořápku aplikace a poslední předpověď. Předpově
 načítá strategií „nejdřív síť", takže nový běh vždy vyhraje, a při výpadku se
 použije uložená kopie.
 
-Odznak v patičce říká, že zobrazená data nemusí být nejnovější, a uvádí jejich
-stáří, například „7 h staré". Řídí se stářím pole `generated_at`, nikoli stavem
-připojení. Důvod je praktický: hlavička odpovědi řadu případů mine, protože
-požadavek může uspět z cache prohlížeče, aniž by se záložní větev service
-workeru vůbec spustila, a `navigator.onLine` zase v některých prostředích hlásí
-nepřipojeno i při funkční síti.
+Patička vždy uvádí stáří předpovědi, počítané z pole `generated_at`, a jednou
+za minutu je přepočítá, aby údaj neustrnul u aplikace nechané otevřené. Když
+stáří přesáhne šest hodin, přibude k němu žlutý odznak.
+
+Stáří je spolehlivější signál než stav připojení. Hlavička odpovědi řadu případů
+mine, protože požadavek může uspět z cache prohlížeče, aniž by se záložní větev
+service workeru vůbec spustila, a `navigator.onLine` zase v některých
+prostředích hlásí nepřipojeno i při funkční síti.
+
+Tlačítko se šipkou v hlavičce vynutí načtení znovu. Přidává k adrese časové
+razítko a žádá `cache: "reload"`, jinak by CDN před GitHub Pages mohla vrátit
+právě tu kopii, kterou se uživatel snaží nahradit.
 
 Instalace na iPhonu: Safari, tlačítko Sdílet, **Přidat na plochu**. Manifest
 nastaví samostatné okno bez adresního řádku, ikony jsou v `web/icons/`.
