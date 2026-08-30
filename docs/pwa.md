@@ -74,8 +74,13 @@ ověřené palety a trojice akcentů prošla kontrolou odstupu pro barvosleposti
 
 Přejetím prstem nebo myší se zobrazí svislá čárkovaná čára a hodnoty vybrané
 hodiny se objeví **v hlavičce**, tedy tam, kde se čtou i bez dotyku. U čáry
-zůstává jen bublina s datem a pod ním s časem. Po zvednutí prstu se hlavička
+zůstává jen bublina se dnem a pod ním s hodinou. Po zvednutí prstu se hlavička
 vrací na aktuální hodinu.
+
+Den je v bublině slovem: „dnes", „zítra", „pozítří". Čte se rychleji než číslo
+a v dosahu grafu jiný den skoro nepřipadá v úvahu. Zbytek pokrývá datum: běh
+může začínat před půlnocí a šedesát hodin z pozdního večera dosáhne až na
+čtvrtý den.
 
 Samostatný řádek s hodnotami pod grafem tím zanikl: dvě místa se stejnými čísly
 si konkurovala a hodnoty byly daleko od velkého údaje nahoře.

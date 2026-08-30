@@ -174,12 +174,10 @@ main { padding: 0 8px; }
 .now-line { stroke: var(--now); stroke-width: 1; }
 .now-label { fill: var(--now); font-size: 12px; }
 
-/* Tooltip by the dashed cursor: date on the first line, time under it. The
-   values themselves go to the header block. */
+/* Tooltip by the dashed cursor: the day named in words on the first line,
+   the hour under it. The values themselves go to the header block. */
 .tip-box { fill: rgba(20, 20, 19, 0.92); stroke: var(--axis); stroke-width: 1; }
-.tip-date, .tip-time { font-size: 13px; font-weight: 400; }
-.tip-date { fill: var(--ink-2); }
-.tip-time { fill: var(--ink); }
+.tip-day, .tip-time { fill: var(--ink-2); font-size: 14px; font-weight: 400; }
 .tip { pointer-events: none; }
 
 .rain-bar { fill: var(--rain); }

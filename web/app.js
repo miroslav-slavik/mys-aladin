@@ -44,6 +44,21 @@ function niceTicks(min, max, count) {
   return ticks;
 }
 
+/* The tooltip names the day rather than dating it: within the range of the
+   chart "zítra" is read faster than a number. The chart can reach a fourth
+   day, and the run can start before midnight, so the calendar form stays as
+   the fallback. */
+function dayWord(date) {
+  const today = new Date();
+  const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((midnight(date) - midnight(today)) / 864e5);
+  if (days === 0) return "dnes";
+  if (days === 1) return "zítra";
+  if (days === 2) return "pozítří";
+  if (days === -1) return "včera";
+  return `${DAYS[date.getDay()]} ${date.getDate()}.${date.getMonth() + 1}.`;
+}
+
 function hhmm(date) {
   return String(date.getHours()).padStart(2, "0") + ":00";
 }
@@ -402,24 +417,24 @@ function attachCursor(svg, series, x, width) {
   const cursor = el("line", { class: "cursor-line", x1: 0, y1: PAD_T, x2: 0, y2: base, visibility: "hidden" }, svg);
   const tip = el("g", { class: "tip", visibility: "hidden" }, svg);
   const box = el("rect", { class: "tip-box", rx: 6, ry: 6 }, tip);
-  const dateText = el("text", { class: "tip-date", x: 0, y: 0 }, tip);
+  const dayText = el("text", { class: "tip-day", x: 0, y: 0 }, tip);
   const timeText = el("text", { class: "tip-time", x: 0, y: 0 }, tip);
 
   const placeTip = (row, cx) => {
-    dateText.textContent = `${DAYS[row.date.getDay()]} ${row.date.getDate()}.${row.date.getMonth() + 1}.`;
+    dayText.textContent = dayWord(row.date);
     timeText.textContent = hhmm(row.date);
-    const w = Math.max(dateText.getComputedTextLength(), timeText.getComputedTextLength()) + 14;
-    const h = 38;
+    const w = Math.max(dayText.getComputedTextLength(), timeText.getComputedTextLength()) + 16;
+    const h = 42;
     const left = cx + 8 + w > width - 2 ? cx - 8 - w : cx + 8;
     const top = PAD_T + 2;
     box.setAttribute("x", left);
     box.setAttribute("y", top);
     box.setAttribute("width", w);
     box.setAttribute("height", h);
-    dateText.setAttribute("x", left + 7);
-    dateText.setAttribute("y", top + 15);
-    timeText.setAttribute("x", left + 7);
-    timeText.setAttribute("y", top + 31);
+    dayText.setAttribute("x", left + 8);
+    dayText.setAttribute("y", top + 16);
+    timeText.setAttribute("x", left + 8);
+    timeText.setAttribute("y", top + 34);
     tip.setAttribute("visibility", "visible");
   };
 
