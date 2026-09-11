@@ -246,12 +246,11 @@ function drawChart(fullSeries, viewName) {
 
   drawNightBands(svg, series, x, base);
 
-  for (const tick of niceTicks(lo, hi, 4)) {
-    el("line", { class: "grid-line", x1: left, y1: y(tick), x2: right, y2: y(tick) }, svg);
-  }
-
   const points = series.map((row, i) => [x(i), y(view.value(row))]);
-  const areaFill = el("path", { d: splinePath(points, base), fill: view.fill, opacity: 0.55 }, svg);
+  const area = splinePath(points, base);
+  drawGrid(svg, series, niceTicks(lo, hi, 4), x, y, left, right, base, width, area);
+
+  const areaFill = el("path", { d: area, fill: view.fill, opacity: 0.55 }, svg);
   areaFill.setAttribute("stroke", "none");
   el("path", { d: splinePath(points, null), fill: "none", stroke: view.color, "stroke-width": 2 }, svg);
 
@@ -375,12 +374,35 @@ function labelExtremes(svg, series, view, x, y) {
   }
 }
 
+/* The grid is the bottom layer: horizontal guides and the six-hour marks, both
+   clipped to the part of the plot the curve does not cover. Everything that
+   carries a reading - the filled area, the curve, the numbers, the now line -
+   then sits over it, instead of being crossed by lines that show through the
+   translucent fill. */
+function drawGrid(svg, series, ticks, x, y, left, right, base, width, area) {
+  const clip = el("clipPath", { id: "grid-clip" }, el("defs", {}, svg));
+  // Rectangle minus the area, by the even-odd rule: what stays is the plot
+  // above the curve.
+  el("path", { d: `M 0,0 H ${width} V ${SVG_H} H 0 Z ${area}`, "clip-rule": "evenodd" }, clip);
+  const grid = el("g", { "clip-path": "url(#grid-clip)" }, svg);
+
+  for (const tick of ticks) {
+    el("line", { class: "grid-line", x1: left, y1: y(tick), x2: right, y2: y(tick) }, grid);
+  }
+  series.forEach((row, i) => {
+    if (row.date.getHours() % 6 !== 0) return;
+    el("line", { class: "grid-line", x1: x(i), y1: PAD_T, x2: x(i), y2: base }, grid);
+  });
+}
+
 function drawTimeAxis(svg, series, x, base, left, right) {
   el("line", { class: "axis-line", x1: left, y1: base, x2: right, y2: base }, svg);
   series.forEach((row, i) => {
     const hour = row.date.getHours();
     if (hour % 6 !== 0) return;
-    el("line", { class: "grid-line", x1: x(i), y1: PAD_T, x2: x(i), y2: base + 4 }, svg);
+    // The tick mark below the axis is outside the plot, so it is drawn here
+    // rather than in the clipped grid.
+    el("line", { class: "grid-line", x1: x(i), y1: base, x2: x(i), y2: base + 4 }, svg);
     el("text", { class: "tick", x: x(i), y: base + 15, "text-anchor": "middle" }, svg)
       .textContent = String(hour).padStart(2, "0");
     if (hour === 0) {

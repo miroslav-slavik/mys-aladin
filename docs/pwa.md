@@ -46,6 +46,14 @@ milimetry vpravo. Graf tím získal obě postranní pásma a kreslí se přes ce
 při dotyku a tabulka. Vodorovné vodicí čáry zůstávají, takže tvar průběhu si
 zachovává měřítko, jen bez čísel.
 
+**Mřížka je nejspodnější vrstva.** Vodicí čáry i šestihodinové svislice se
+kreslí jako první a ořezávají se na tu část plochy, kterou křivka nezakrývá
+(`clipPath` s pravidlem even-odd). Dřív prosvítaly poloprůhlednou výplní a
+svislice se navíc kreslily až po křivce, takže přecházely přes graf i přes
+čísla. Nad mřížkou tak leží plocha, křivka, sloupce srážek, popisky, linka
+**teď** i čárkovaný kurzor. Texty v grafu mají kolem sebe tenkou svatozář
+v barvě podkladu, aby zůstaly čitelné i tam, kde za nimi vede čára.
+
 **Popisek na začátku křivky.** Vedle maxima a minima je označena i hodnota
 prvního kroku, aby bylo hned zřejmé, odkud předpověď vychází.
 

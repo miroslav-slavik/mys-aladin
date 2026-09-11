@@ -199,6 +199,16 @@ main { padding: 0 8px; }
 
 .grid-line { stroke: var(--grid); stroke-width: 1; }
 .axis-line { stroke: var(--axis); stroke-width: 1; }
+
+/* Text in the chart is read over the grid, never under it. The halo in the
+   page colour keeps a number legible where a guide line or the curve runs
+   right behind it. */
+.tick, .day-label, .value-label, .now-label {
+  paint-order: stroke fill;
+  stroke: var(--plane);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+}
 .tick { fill: var(--muted); font-size: 12px; }
 .day-label { fill: var(--ink-2); font-size: 13px; font-weight: 600; }
 .night-band { fill: var(--night); }
