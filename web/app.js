@@ -286,8 +286,8 @@ function defineGridClip(svg, width, area) {
 }
 
 /* Days are told apart by the ground they stand on, not only by the names under
-   the axis: today keeps the plane of the page and every later day is lifted a
-   shade, so the chart reads as today against what is still to come. The band
+   the axis: days alternate between the plane of the page and a shade above it,
+   today being the plane, so every boundary is a change of ground. The band
    is background like the grid, clipped the same way, so nothing of it shows
    through the filled area.
 
@@ -305,7 +305,10 @@ function drawDayBands(svg, series, x, base) {
     const last = i === series.length;
     if (!last && series[i].date.getDate() === series[start].date.getDate()) continue;
     const day = Math.round((midnight(series[start].date) - today) / 864e5);
-    if (day >= 1) {
+    // Alternating, with today on the plane of the page: every boundary between
+    // two days is then a change of ground. The modulo also behaves for the
+    // hours of yesterday that a late run still carries.
+    if ((((day % 2) + 2) % 2) === 1) {
       const from = x(start);
       const to = x(last ? series.length - 1 : i);
       // The chart can end exactly at midnight, which starts a day that is one

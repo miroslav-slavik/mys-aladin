@@ -54,9 +54,10 @@ svislice se navíc kreslily až po křivce, takže přecházely přes graf i př
 **teď** i čárkovaný kurzor. Texty v grafu mají kolem sebe tenkou svatozář
 v barvě podkladu, aby zůstaly čitelné i tam, kde za nimi vede čára.
 
-**Dny jsou odlišené podkladem.** Dnešek stojí na barvě stránky, zítřek
-a pozítří mají o odstín světlejší pozadí (`--day-band`, bílá s krytím 0,06).
-Graf se tím čte jako dnešek proti tomu, co teprve přijde.
+**Dny jsou odlišené podkladem.** Podklad se střídá: dnešek stojí na barvě
+stránky, zítřek má o odstín světlejší pozadí (`--day-band`, bílá s krytím
+0,06), pozítří je zase na barvě stránky. Každá hranice dne je tím změnou
+podkladu.
 
 Noc se v grafu nepodbarvuje. Dřív měla vlastní tmavý pás přes hodiny 21 až 6,
 ale vedle podkladu dnů začalo být pásů v grafu příliš; noc nese řádek ikon
