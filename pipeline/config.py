@@ -41,6 +41,41 @@ LOCATIONS: tuple[Location, ...] = (
 )
 
 
+#: The area pack: a coarsened copy of the whole grid, so the app can answer for
+#: a point nobody listed in advance. Every AREA_STRIDE-th point of the 1 km
+#: source grid is kept, which gives a step of about two kilometres.
+AREA_STRIDE = 2
+
+#: Side of one tile, in points of the coarsened grid. Twelve keeps a tile near
+#: fifty kilobytes, small enough to fetch over a phone connection.
+AREA_TILE = 12
+
+
+@dataclass(frozen=True)
+class AreaField:
+    """One field of the area pack and how its values are stored.
+
+    The value the app reads back is the stored integer divided by the scale,
+    in the units of data/forecast.json.
+    """
+
+    field: str
+    dtype: str
+    scale: float
+
+
+#: Temperature and precipitation are what the pack exists for. Cloud cover
+#: comes along because it costs a single byte per point and hour and the hourly
+#: icons cannot be drawn without it. Wind is deliberately absent: it would add
+#: two bytes for a quantity that matters least, and the listed locations carry
+#: it anyway, at the full resolution of the source grid.
+AREA_FIELDS: tuple[AreaField, ...] = (
+    AreaField("t2m", "int16", 10.0),        # 0.1 °C
+    AreaField("precip_mm", "uint16", 10.0),  # 0.1 mm
+    AreaField("cloud_pct", "uint8", 1.0),    # whole per cent
+)
+
+
 @dataclass(frozen=True)
 class Parameter:
     """One ALADIN field and how it maps onto a field of the output JSON."""
@@ -71,6 +106,14 @@ PARAMETERS: tuple[Parameter, ...] = (
     Parameter("wind_ms", "CLSWIND_SPEED", 32, lambda v: v, 1),
     Parameter("wind_dir", "CLSWIND_DIREC", 31, lambda v: v, None),
 )
+
+
+def parameter_for(field: str) -> Parameter:
+    """The source parameter that fills one field of the output."""
+    for parameter in PARAMETERS:
+        if parameter.field == field:
+            return parameter
+    raise KeyError(field)
 
 
 def location_is_on_grid(location: Location) -> bool:

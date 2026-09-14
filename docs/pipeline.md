@@ -9,6 +9,8 @@ za návrhem stojí. Ověřená fakta o zdrojových datech jsou v `parametry.md`.
 ~/.venvs/grib/bin/python -m pipeline              # běžný běh
 ~/.venvs/grib/bin/python -m pipeline --force      # přepíše i již zpracovaný běh
 ~/.venvs/grib/bin/python -m pipeline --output x.json
+~/.venvs/grib/bin/python -m pipeline --no-area    # jen vyjmenovaná místa
+~/.venvs/grib/bin/python -m pipeline --area-output build/area
 ```
 
 Běh nad novým během modelu trvá zhruba 40 sekund, z toho většinu zabere
@@ -21,8 +23,9 @@ do pěti sekund, protože se nestahuje nic.
 |---|---|
 | `pipeline/config.py` | Místa včetně zobrazovaného názvu, seznam veličin, hranice mřížky |
 | `pipeline/source.py` | Nalezení nejnovějšího kompletního běhu, stažení a dekomprese |
-| `pipeline/reader.py` | Čtení GRIB, extrakce bodu, převod jednotek |
+| `pipeline/reader.py` | Čtení GRIB, extrakce bodu i celé mřížky, převod jednotek |
 | `pipeline/build.py` | Sestavení a zápis `data/forecast.json` |
+| `pipeline/area.py` | Kvantizace, dlaždice a index plošného balíku |
 | `pipeline/__main__.py` | Orchestrace a idempotence |
 
 ## Návrhová rozhodnutí
@@ -55,6 +58,54 @@ spuštění tedy nezatěžuje zdroj.
 **Kompletnost běhu podle počtu souborů.** Za kompletní se považuje běh s 31
 soubory. Nekompletní běh se přeskočí a použije se starší, aby se nestalo, že
 se pipeline pokusí stáhnout soubor, který ještě nebyl publikován.
+
+## Plošný balík
+
+Vyjmenovaná místa se extrahují v plném rozlišení zdroje a jdou do
+`data/forecast.json`. Na místo zadané v aplikaci to nestačí, a proto vzniká
+druhý výstup: **plošný balík** nad celou doménou, prořídlý na každý druhý bod
+mřížky, tedy krok asi dva kilometry, rozřezaný na dlaždice.
+
+| Vlastnost | Hodnota |
+|---|---|
+| Prořídnutí | `AREA_STRIDE = 2`, mřížka 251 × 145 = 36 395 bodů |
+| Dlaždice | `AREA_TILE = 12` bodů na stranu, 21 × 13 = 273 dlaždic |
+| Veličiny | teplota `int16` po 0,1 °C, srážky `uint16` po 0,1 mm, oblačnost `uint8` v procentech |
+| Velikost | 13,1 MB na běh, největší dlaždice 50,6 kB, po gzipu asi 17 kB |
+| Zápis | do 0,3 sekundy, měřeno na plné velikosti |
+
+Vítr v balíku není. Stál by další dva bajty na bod a hodinu u veličiny, která
+je pro čtení předpovědi nejméně podstatná, a u vyjmenovaných míst je k
+dispozici tak jako tak. Oblačnost naopak zůstává, přestože také není hlavní:
+stojí jediný bajt a bez ní by nešly nakreslit hodinové ikony.
+
+### Formát dlaždice
+
+Jeden binární soubor `{tx}-{ty}.bin` na dlaždici, bez hlavičky. Sekce jdou za
+sebou v pořadí `AREA_FIELDS` a uvnitř sekce leží celá časová řada jednoho bodu
+pohromadě:
+
+```
+index = (řádek * šířka + sloupec) * počet_hodin + hodina
+```
+
+Hodnoty jsou celá čísla v pořadí bajtů little endian a výsledek se získá
+dělením měřítkem dané veličiny. Dlaždice na okraji domény jsou užší nebo nižší;
+aplikace si šířku dopočítá jako `min(tile, nx - tx * tile)`.
+
+Vše potřebné ke čtení nese `index.json` vedle dlaždic: počátek a krok mřížky,
+velikost dlaždice, počet dlaždic, seznam platných časů, pořadí veličin a jejich
+měřítka, `run_id` a `generated_at`. Aplikace tedy formát nikde neodhaduje.
+Krok mřížky se do indexu zapisuje změřený z dat, nikoli jako konstanta: ve
+směru délky vychází 0,01399°, nikoli kulatých 0,014°, jak uvádí dokumentace.
+
+Balík se zapisuje do `build/area`, tedy mimo git. Při 13,1 MB na běh a čtyřech
+nových bězích denně by historie repozitáře rostla zhruba o 50 MB denně, což je
+neúnosné. Publikaci řeší workflow, viz níže.
+
+Adresář se před zápisem maže celý, aby balík nikdy nemíchal dlaždice ze dvou
+běhů. Běh, který nenajde nová data, balík nepřepisuje, stejně jako nepřepisuje
+`forecast.json`.
 
 ## Publikace
 
