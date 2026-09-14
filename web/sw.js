@@ -3,7 +3,7 @@
    forecast stays in the cache as the offline fallback. */
 "use strict";
 
-const CACHE = "mys-aladin-v20";
+const CACHE = "mys-aladin-v21";
 const FORECAST = "data/forecast.json";
 
 /* Tiles of the area pack live in their own cache, so that a few places looked

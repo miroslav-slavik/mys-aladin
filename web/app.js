@@ -259,12 +259,12 @@ function drawChart(fullSeries, viewName) {
   }
   const y = (v) => base - ((v - lo) / (hi - lo || 1)) * PLOT_H;
 
-  drawDayBands(svg, series, x, base);
-  drawNightBands(svg, series, x, base);
-
   const points = series.map((row, i) => [x(i), y(view.value(row))]);
   const area = splinePath(points, base);
-  drawGrid(svg, series, niceTicks(lo, hi, 4), x, y, left, right, base, width, area);
+  defineGridClip(svg, width, area);
+  drawDayBands(svg, series, x, base);
+  drawNightBands(svg, series, x, base);
+  drawGrid(svg, series, niceTicks(lo, hi, 4), x, y, left, right, base);
 
   const areaFill = el("path", { d: area, fill: view.fill, opacity: 0.55 }, svg);
   areaFill.setAttribute("stroke", "none");
@@ -278,10 +278,21 @@ function drawChart(fullSeries, viewName) {
   attachCursor(svg, series, x, width);
 }
 
+/* Everything that belongs behind the chart - the day bands and the grid - is
+   cut to the part of the plot the curve does not cover. Rectangle minus the
+   area, by the even-odd rule. */
+function defineGridClip(svg, width, area) {
+  const clip = el("clipPath", { id: "grid-clip" }, el("defs", {}, svg));
+  el("path", { d: `M 0,0 H ${width} V ${SVG_H} H 0 Z ${area}`, "clip-rule": "evenodd" }, clip);
+}
+
 /* Days are told apart by the ground they stand on, not only by the names under
-   the axis: every other day is lifted a shade, starting with tomorrow. The
-   night bands are drawn over this, so a night stays a night on either day. */
+   the axis: today keeps the plane of the page and every later day is lifted a
+   shade, so the chart reads as today against what is still to come. The band
+   is background like the grid, clipped the same way, so nothing of it shows
+   through the filled area. */
 function drawDayBands(svg, series, x, base) {
+  const bands = el("g", { "clip-path": "url(#grid-clip)" }, svg);
   const midnight = (date) =>
     new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const today = midnight(new Date());
@@ -291,9 +302,7 @@ function drawDayBands(svg, series, x, base) {
     const last = i === series.length;
     if (!last && series[i].date.getDate() === series[start].date.getDate()) continue;
     const day = Math.round((midnight(series[start].date) - today) / 864e5);
-    // Tomorrow, the day after the day after, and so on; a modulo that also
-    // behaves for the hours of yesterday a late run still carries.
-    if ((((day % 2) + 2) % 2) === 1) {
+    if (day >= 1) {
       const from = x(start);
       const to = x(last ? series.length - 1 : i);
       // The chart can end exactly at midnight, which starts a day that is one
@@ -305,7 +314,7 @@ function drawDayBands(svg, series, x, base) {
           y: PAD_T,
           width: to - from,
           height: base - PAD_T,
-        }, svg);
+        }, bands);
       }
     }
     start = i;
@@ -429,11 +438,7 @@ function labelExtremes(svg, series, view, x, y) {
    carries a reading - the filled area, the curve, the numbers, the now line -
    then sits over it, instead of being crossed by lines that show through the
    translucent fill. */
-function drawGrid(svg, series, ticks, x, y, left, right, base, width, area) {
-  const clip = el("clipPath", { id: "grid-clip" }, el("defs", {}, svg));
-  // Rectangle minus the area, by the even-odd rule: what stays is the plot
-  // above the curve.
-  el("path", { d: `M 0,0 H ${width} V ${SVG_H} H 0 Z ${area}`, "clip-rule": "evenodd" }, clip);
+function drawGrid(svg, series, ticks, x, y, left, right, base) {
   const grid = el("g", { "clip-path": "url(#grid-clip)" }, svg);
 
   for (const tick of ticks) {
