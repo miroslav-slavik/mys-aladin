@@ -122,6 +122,27 @@ doménu modelu panel odmítne se srozumitelnou hláškou, stejně jako situaci, 
 plošný balík ještě není publikovaný; v obou případech zůstane na obrazovce
 poslední funkční místo.
 
+### Povýšení místa na plné rozlišení
+
+U místa zadaného v aplikaci nabídne panel, že ho přidá mezi uložená. Aplikace
+do repozitáře psát nemůže — neměla by k tomu přístupové údaje a mít je ve
+stránce, která běží v telefonu, by bylo horší než ta trocha nepohodlí. Připraví
+tedy obsah souboru a předá ho dál:
+
+- **Založit soubor na GitHubu** otevře webový editor s předvyplněnou cestou
+  `places/<název>.json` i obsahem, takže stačí potvrdit commit.
+- **Zkopírovat obsah souboru** dá totéž do schránky, kdyby předvyplnění
+  nefungovalo.
+
+Název souboru vznikne z názvu místa bez diakritiky, tedy „Pec pod Sněžkou" dá
+`places/pec-pod-snezkou.json`. Po nejbližším běhu modelu je místo v
+`forecast.json` v rozlišení 1 km a s větrem.
+
+Aplikace si toho všimne sama: uložený bod, ke kterému se v předpovědi objeví
+místo se shodnými souřadnicemi, se tiše nahradí tím místem. Odznak „2 km"
+zmizí, vítr se vrátí. Ověřeno v prohlížeči proti předpovědi, která to místo už
+obsahuje.
+
 ### Čtení dlaždice
 
 Kód je v `web/area.js` a o formátu nic nepředpokládá: počátek a krok mřížky,

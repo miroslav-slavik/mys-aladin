@@ -7,7 +7,9 @@ nature of precipitation) were verified in Phase 1; see docs/parametry.md.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable
 
 BASE_URL = "https://opendata.chmi.cz/meteorology/weather/nwp_aladin/CZ_1km"
@@ -35,10 +37,81 @@ class Location:
     """What the app puts on screen; falls back to the name when empty."""
 
 
-LOCATIONS: tuple[Location, ...] = (
-    # Lipnická 1450, Kyje, 198 00 Praha 9 (RUIAN address point 25225472).
-    Location("Home", 50.110113, 14.558445, label="Kyje, Praha 9"),
-)
+#: Locations live one per file, so a new one can be added by writing a file
+#: rather than by editing code - which is what lets the app offer to add the
+#: place it is showing.
+PLACES_DIR = Path(__file__).resolve().parent.parent / "places"
+
+PLACE_KEYS = {"name", "label", "lat", "lon"}
+
+
+@dataclass(frozen=True)
+class Places:
+    """What a directory of place files yielded, problems included.
+
+    A typo in one file must not cost the forecast for every other place, so
+    the loader reports what it could not read and carries on with the rest.
+    """
+
+    locations: tuple[Location, ...]
+    problems: tuple[str, ...]
+
+
+def parse_place(document: object, key: str) -> Location:
+    """One place file, checked before it can reach the pipeline."""
+    if not isinstance(document, dict):
+        raise ValueError("expected an object")
+    unknown = set(document) - PLACE_KEYS
+    if unknown:
+        raise ValueError(f"unknown keys: {', '.join(sorted(unknown))}")
+    for required in ("lat", "lon"):
+        if required not in document:
+            raise ValueError(f"missing {required}")
+        if not isinstance(document[required], (int, float)) or isinstance(document[required], bool):
+            raise ValueError(f"{required} is not a number")
+
+    name = str(document.get("name") or key).strip()
+    if not name:
+        raise ValueError("name is empty")
+
+    location = Location(
+        name=name,
+        lat=float(document["lat"]),
+        lon=float(document["lon"]),
+        label=str(document.get("label") or "").strip(),
+    )
+    if not location_is_on_grid(location):
+        raise ValueError(
+            f"{location.lat}, {location.lon} lies outside the CZ_1km grid"
+        )
+    return location
+
+
+def load_places(directory: Path = PLACES_DIR) -> Places:
+    """Every place file of a directory, in a stable order.
+
+    home.json comes first, the rest by file name, because the app opens on the
+    first location when it has no choice of its own remembered.
+    """
+    if not directory.is_dir():
+        return Places((), (f"{directory} is not a directory",))
+
+    locations: list[Location] = []
+    problems: list[str] = []
+    taken: set[str] = set()
+    paths = sorted(directory.glob("*.json"), key=lambda path: (path.stem != "home", path.stem))
+    for path in paths:
+        try:
+            location = parse_place(json.loads(path.read_text(encoding="utf-8")), path.stem)
+        except (ValueError, OSError, json.JSONDecodeError) as error:
+            problems.append(f"{path.name}: {error}")
+            continue
+        if location.name in taken:
+            problems.append(f"{path.name}: name {location.name} is already taken")
+            continue
+        taken.add(location.name)
+        locations.append(location)
+    return Places(tuple(locations), tuple(problems))
 
 
 #: The area pack: a coarsened copy of the whole grid, so the app can answer for

@@ -163,6 +163,29 @@
   <h3 class="sheet-label" id="recentLabel" hidden>Naposledy</h3>
   <ul class="sheet-list" id="recentPlaces"></ul>
 
+  <div id="saveBlock" hidden>
+    <h3 class="sheet-label">Uložit natrvalo</h3>
+    <p class="sheet-footnote">
+      Přidá <strong id="saveName"></strong> mezi uložená místa v repozitáři.
+      Po nejbližším běhu modelu bude v rozlišení 1 km a s větrem.
+    </p>
+    <a class="sheet-action" id="saveLink" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M12 4v11M8 11l4 4 4-4M5 19h14" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Založit soubor na GitHubu
+    </a>
+    <button class="sheet-action" id="copyPlace" type="button">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M5 15V6a2 2 0 0 1 2-2h9" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round"/>
+      </svg>
+      Zkopírovat obsah souboru
+    </button>
+  </div>
+
   <p class="sheet-footnote">
     Uložená místa počítá pipeline z plné mřížky ALADIN a nesou i vítr. Ostatní
     místa se čtou z mřížky po dvou kilometrech, bez větru.

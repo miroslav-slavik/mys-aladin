@@ -10,11 +10,13 @@ autentizace, žádný trvale běžící server.
 
 - **Sledované parametry:** teplota 2 m, úhrn srážek, celková oblačnost,
   rychlost a směr větru
-- **Místa (název, lat, lon):**
+- **Místa (název, lat, lon):** jedno místo na soubor v adresáři `places/`,
+  formát popisuje `docs/pipeline.md`.
   - `Home`, `50.110113`, `14.558445` — Lipnická 1450, Kyje, 198 00 Praha 9;
     souřadnice z RÚIAN (kód adresního místa 25225472), WGS-84. Nejbližší bod
     mřížky CZ_1km leží 272 m daleko na 50,1110 N a 14,5620 E.
-  - Další místa lze přidat později, schéma i pipeline s více místy počítají.
+  - Další místa lze přidat později založením souboru v `places/`; aplikace to
+    umí nabídnout pro právě zobrazený bod.
 - **Místo zadané v aplikaci:** kromě vyjmenovaných míst umí aplikace ukázat
   předpověď pro libovolný bod v doméně modelu, zadaný polohou telefonu,
   hledáním obce nebo souřadnicemi. Data pro něj nese plošný balík: mřížka

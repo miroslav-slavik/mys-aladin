@@ -25,14 +25,7 @@ import requests
 
 from .area import align_grids, pack_size, write_area_pack
 from .build import build_forecast, read_run_id, write_forecast
-from .config import (
-    AREA_FIELDS,
-    AREA_STRIDE,
-    LOCATIONS,
-    PARAMETERS,
-    Location,
-    location_is_on_grid,
-)
+from .config import AREA_FIELDS, AREA_STRIDE, PARAMETERS, Location, load_places
 from .reader import (
     hourly_grid_from_accumulated,
     read_grid,
@@ -72,15 +65,19 @@ class Extracted:
 
 
 def collect(
-    session: requests.Session, run: Run, work_dir: Path, with_area: bool = True
+    session: requests.Session,
+    run: Run,
+    work_dir: Path,
+    locations: tuple[Location, ...],
+    with_area: bool = True,
 ) -> Extracted:
     """Download each parameter once and take everything needed out of it."""
-    extracted = Extracted(points={location: {} for location in LOCATIONS})
+    extracted = Extracted(points={location: {} for location in locations})
     for parameter in PARAMETERS:
         LOG.info("downloading %s", parameter.file_part)
         path = download(session, run, parameter.file_part, work_dir)
 
-        for location in LOCATIONS:
+        for location in locations:
             raw = read_point_series(path, parameter, location)
             extracted.points[location][parameter.field] = to_output_units(raw, parameter)
 
@@ -103,9 +100,14 @@ def run_pipeline(
     force: bool = False,
     area_output: Path | None = DEFAULT_AREA_OUTPUT,
 ) -> int:
-    for location in LOCATIONS:
-        if not location_is_on_grid(location):
-            raise SystemExit(f"location {location.name} lies outside the CZ_1km grid")
+    places = load_places()
+    for problem in places.problems:
+        # One unreadable file must not cost the forecast for the others, but it
+        # has to be visible in the log of the run that skipped it.
+        LOG.error("skipping place %s", problem)
+    if not places.locations:
+        raise SystemExit("no usable place files; nothing to forecast for")
+    LOG.info("places: %s", ", ".join(location.name for location in places.locations))
 
     session = _session()
     run = latest_complete_run(session)
@@ -116,7 +118,9 @@ def run_pipeline(
         return 0
 
     with tempfile.TemporaryDirectory(prefix="aladin-") as work:
-        extracted = collect(session, run, Path(work), with_area=area_output is not None)
+        extracted = collect(
+            session, run, Path(work), places.locations, with_area=area_output is not None
+        )
 
     # One moment for both outputs, so the app can tell that a tile and the
     # forecast beside it came from the same run of this pipeline.

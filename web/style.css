@@ -226,6 +226,7 @@ body.no-wind #dataTable .wind { display: none; }
 
 .sheet-action {
   display: flex;
+  text-decoration: none;
   align-items: center;
   gap: 8px;
   width: 100%;
@@ -288,6 +289,8 @@ body.no-wind #dataTable .wind { display: none; }
   color: var(--muted);
 }
 
+.sheet-action + .sheet-action { margin-top: 8px; }
+
 .sheet-note {
   margin: 10px 0 0;
   padding: 8px 10px;
@@ -297,7 +300,11 @@ body.no-wind #dataTable .wind { display: none; }
   font-size: 14px;
 }
 
+.sheet-note.is-ok { border-color: var(--wind); color: var(--wind); }
+
 .sheet-footnote { margin: 16px 0 0; color: var(--muted); font-size: 12px; }
+.sheet-footnote strong { color: var(--ink-2); }
+#saveBlock .sheet-footnote { margin: 0 0 8px; }
 
 /* Hourly icons ------------------------------------------------------- */
 

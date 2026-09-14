@@ -644,7 +644,7 @@ function render(forecast, fromCache) {
     `Běh modelu ${formatMoment(forecast.run_id)}, aktualizováno ${formatMoment(forecast.generated_at)}`;
   updateAge();
 
-  const wanted = state.place || stored(STORED_PLACE) || listedPlaces()[0];
+  const wanted = promote(state.place || stored(STORED_PLACE) || listedPlaces()[0]);
   selectPlace(wanted);
 }
 
@@ -659,6 +659,19 @@ function listedPlaces() {
     lat: location.lat,
     lon: location.lon,
   }));
+}
+
+/* A point that has since been added to the repository comes back as a listed
+   place, and the app should show that one: same spot, full resolution, wind
+   included. The file is written from the point itself, so the coordinates
+   match to the metre; a hundred metres of slack is room for the rounding on
+   the way through. */
+function promote(place) {
+  if (!place || place.kind !== "point") return place;
+  const listed = listedPlaces().find(
+    (one) => Math.abs(one.lat - place.lat) < 1e-3 && Math.abs(one.lon - place.lon) < 1e-3
+  );
+  return listed || place;
 }
 
 function samePlace(one, other) {
@@ -866,10 +879,11 @@ function nameFor(lat, lon) {
   return best && bestDistance < 0.002 ? best.name : coordinateLabel(lat, lon);
 }
 
-function note(message) {
+function note(message, kind = "warning") {
   const element = document.getElementById("panelNote");
   element.textContent = message;
   element.hidden = !message;
+  element.classList.toggle("is-ok", kind === "ok");
 }
 
 function placeItem(place, detail) {
@@ -899,6 +913,51 @@ function fillList(id, items) {
   return list;
 }
 
+/* Adding a place means adding a file to the repository, and the app cannot
+   write there: it has no credentials, and putting any in a page served to a
+   phone would be worse than the inconvenience it saves. So it prepares the
+   file and hands it over - to the web editor of GitHub, prefilled, or to the
+   clipboard when that is easier. */
+const REPO = "https://github.com/miroslav-slavik/mys-aladin";
+
+function slug(text) {
+  return foldAccents(text).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "misto";
+}
+
+function placeFile(place) {
+  return `${JSON.stringify(
+    { name: slug(place.label), label: place.label, lat: place.lat, lon: place.lon },
+    null,
+    2
+  )}\n`;
+}
+
+function saveUrl(place) {
+  const path = `places/${slug(place.label)}.json`;
+  return `${REPO}/new/main?filename=${encodeURIComponent(path)}` +
+    `&value=${encodeURIComponent(placeFile(place))}`;
+}
+
+function renderSaveBlock() {
+  const place = state.place;
+  const offer = Boolean(place && place.kind === "point");
+  document.getElementById("saveBlock").hidden = !offer;
+  if (!offer) return;
+  document.getElementById("saveName").textContent = place.label;
+  document.getElementById("saveLink").href = saveUrl(place);
+}
+
+document.getElementById("copyPlace").addEventListener("click", async () => {
+  const place = state.place;
+  if (!place || place.kind !== "point") return;
+  try {
+    await navigator.clipboard.writeText(placeFile(place));
+    note(`Obsah souboru places/${slug(place.label)}.json je ve schránce.`, "ok");
+  } catch (error) {
+    note("Do schránky se zkopírovat nepodařilo, odkaz výše obsah vyplní sám.");
+  }
+});
+
 function renderPlaceLists() {
   fillList("listedPlaces", listedPlaces().map((place) => placeItem(place, "1 km, s větrem")));
   const recent = stored(STORED_RECENT) || [];
@@ -911,6 +970,7 @@ function renderPlaceLists() {
     })
   );
   document.getElementById("recentLabel").hidden = recent.length === 0;
+  renderSaveBlock();
 }
 
 function renderResults() {

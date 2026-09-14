@@ -59,6 +59,36 @@ spuštění tedy nezatěžuje zdroj.
 soubory. Nekompletní běh se přeskočí a použije se starší, aby se nestalo, že
 se pipeline pokusí stáhnout soubor, který ještě nebyl publikován.
 
+## Místa
+
+Vyjmenovaná místa nejsou v kódu, ale v adresáři `places/`, jeden soubor na
+místo. Důvod je praktický: nové místo pak vzniká založením souboru, což zvládne
+i telefon přes webový editor GitHubu, a aplikace to umí nabídnout.
+
+```json
+{
+  "name": "pec-pod-snezkou",
+  "label": "Pec pod Sněžkou",
+  "lat": 50.6935,
+  "lon": 15.7332
+}
+```
+
+`lat` a `lon` jsou povinné, `name` se jinak vezme z názvu souboru a `label` je
+text, který uvidí uživatel. Neznámý klíč je chyba, protože nejčastější překlep
+je právě v názvu klíče a tiché ignorování by ho schovalo.
+
+Pořadí je dané: `home.json` první, zbytek podle názvu souboru. Aplikace otevírá
+první místo v seznamu, pokud si nepamatuje vlastní volbu.
+
+**Vadný soubor se přeskočí, běh pokračuje.** Chyba v jednom místě nesmí stát
+předpověď pro ostatní. Přeskočení se ale zapíše do logu běhu jako `ERROR`,
+takže je v Actions vidět, proč se nové místo neobjevilo. Když nezbude žádné
+použitelné místo, běh skončí chybou.
+
+Kontrola, že místo leží v doméně modelu, probíhá už při načtení souboru, nikoli
+až při čtení GRIBu.
+
 ## Plošný balík
 
 Vyjmenovaná místa se extrahují v plném rozlišení zdroje a jdou do
