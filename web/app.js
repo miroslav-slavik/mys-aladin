@@ -259,6 +259,7 @@ function drawChart(fullSeries, viewName) {
   }
   const y = (v) => base - ((v - lo) / (hi - lo || 1)) * PLOT_H;
 
+  drawDayBands(svg, series, x, base);
   drawNightBands(svg, series, x, base);
 
   const points = series.map((row, i) => [x(i), y(view.value(row))]);
@@ -275,6 +276,40 @@ function drawChart(fullSeries, viewName) {
   drawTimeAxis(svg, series, x, base, left, right);
   drawNow(svg, series, x, base);
   attachCursor(svg, series, x, width);
+}
+
+/* Days are told apart by the ground they stand on, not only by the names under
+   the axis: every other day is lifted a shade, starting with tomorrow. The
+   night bands are drawn over this, so a night stays a night on either day. */
+function drawDayBands(svg, series, x, base) {
+  const midnight = (date) =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const today = midnight(new Date());
+
+  let start = 0;
+  for (let i = 1; i <= series.length; i++) {
+    const last = i === series.length;
+    if (!last && series[i].date.getDate() === series[start].date.getDate()) continue;
+    const day = Math.round((midnight(series[start].date) - today) / 864e5);
+    // Tomorrow, the day after the day after, and so on; a modulo that also
+    // behaves for the hours of yesterday a late run still carries.
+    if ((((day % 2) + 2) % 2) === 1) {
+      const from = x(start);
+      const to = x(last ? series.length - 1 : i);
+      // The chart can end exactly at midnight, which starts a day that is one
+      // point wide and worth nothing on screen.
+      if (to - from >= 1) {
+        el("rect", {
+          class: "day-band",
+          x: from,
+          y: PAD_T,
+          width: to - from,
+          height: base - PAD_T,
+        }, svg);
+      }
+    }
+    start = i;
+  }
 }
 
 function drawNightBands(svg, series, x, base) {
@@ -405,8 +440,14 @@ function drawGrid(svg, series, ticks, x, y, left, right, base, width, area) {
     el("line", { class: "grid-line", x1: left, y1: y(tick), x2: right, y2: y(tick) }, grid);
   }
   series.forEach((row, i) => {
-    if (row.date.getHours() % 6 !== 0) return;
-    el("line", { class: "grid-line", x1: x(i), y1: PAD_T, x2: x(i), y2: base }, grid);
+    const hour = row.date.getHours();
+    if (hour % 6 !== 0) return;
+    // Midnight is where one day ends, so it is drawn a shade stronger than the
+    // six-hour marks around it.
+    el("line", {
+      class: hour === 0 ? "day-line" : "grid-line",
+      x1: x(i), y1: PAD_T, x2: x(i), y2: base,
+    }, grid);
   });
 }
 

@@ -54,6 +54,12 @@ svislice se navíc kreslily až po křivce, takže přecházely přes graf i př
 **teď** i čárkovaný kurzor. Texty v grafu mají kolem sebe tenkou svatozář
 v barvě podkladu, aby zůstaly čitelné i tam, kde za nimi vede čára.
 
+**Dny jsou odlišené podkladem.** Každý druhý den má o odstín světlejší pozadí,
+počínaje zítřkem, takže hranice dne je vidět i bez čtení popisků pod osou.
+Rozdíl je záměrně malý (`--day-band`, bílá s krytím 0,035); v pohledech, kde
+plocha grafu zabírá skoro celou výšku, je proto patrný hlavně nad křivkou.
+Půlnoc navíc kreslí silnější svislici než ostatní šestihodinové značky.
+
 **Popisek na začátku křivky.** Vedle maxima a minima je označena i hodnota
 prvního kroku, aby bylo hned zřejmé, odkud předpověď vychází.
 

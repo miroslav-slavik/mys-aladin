@@ -18,6 +18,9 @@
   --now: #f2d98a;
 
   --night: rgba(0, 0, 0, 0.45);
+  /* Every other day in the chart stands a shade higher than the plane, enough
+     to separate the days and no more. */
+  --day-band: rgba(255, 255, 255, 0.035);
 }
 
 * { box-sizing: border-box; }
@@ -378,6 +381,8 @@ main { padding: 0 8px; }
 .tick { fill: var(--muted); font-size: 12px; }
 .day-label { fill: var(--ink-2); font-size: 13px; font-weight: 600; }
 .night-band { fill: var(--night); }
+.day-band { fill: var(--day-band); }
+.day-line { stroke: var(--axis); stroke-width: 1; }
 .value-label { fill: var(--ink); font-size: 13px; }
 .cursor-line { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 3; }
 .now-line { stroke: var(--now); stroke-width: 1; }
