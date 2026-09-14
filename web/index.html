@@ -16,7 +16,17 @@
 </head>
 <body>
 <header class="topbar">
-  <h1 id="place">Počasí</h1>
+  <h1 class="place-heading">
+    <button class="place-button" id="placeButton" type="button" aria-haspopup="dialog">
+      <span id="place">Počasí</span>
+      <span class="chip" id="placeChip" hidden>2 km</span>
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="sr-only">Vybrat místo</span>
+    </button>
+  </h1>
   <div class="topbar-right">
     <p class="when" id="when"></p>
     <button class="refresh" id="refresh" type="button" title="Načíst znovu" aria-label="Načíst předpověď znovu">
@@ -52,7 +62,7 @@
     </p>
   </div>
   <dl class="now-side">
-    <div>
+    <div class="wind">
       <dt>
         <svg class="param-icon icon-wind" viewBox="1 1 22 22" width="24" height="24" aria-hidden="true">
           <g stroke="currentColor" stroke-linecap="round" fill="none">
@@ -109,7 +119,7 @@
             <th scope="col">Teplota<br><span class="unit">°C</span></th>
             <th scope="col">Srážky<br><span class="unit">mm/h</span></th>
             <th scope="col">Oblačnost<br><span class="unit">%</span></th>
-            <th scope="col">Vítr<br><span class="unit">m/s · °</span></th>
+            <th class="wind" scope="col">Vítr<br><span class="unit">m/s · °</span></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -120,12 +130,53 @@
   <p class="error" id="error" hidden></p>
 </main>
 
+<dialog class="sheet" id="placePanel" aria-labelledby="sheetTitle">
+  <div class="sheet-head">
+    <h2 id="sheetTitle">Místo</h2>
+    <button class="sheet-close" id="closePanel" type="button" aria-label="Zavřít">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <button class="sheet-action" id="useLocation" type="button">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
+      <circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" stroke="currentColor"
+            stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    Moje poloha
+  </button>
+
+  <input class="sheet-search" id="placeSearch" type="search" autocomplete="off"
+         enterkeyhint="search" placeholder="Najít obec nebo zadat souřadnice">
+  <ul class="sheet-list" id="placeResults"></ul>
+
+  <p class="sheet-note" id="panelNote" hidden></p>
+
+  <h3 class="sheet-label">Uložená místa</h3>
+  <ul class="sheet-list" id="listedPlaces"></ul>
+
+  <h3 class="sheet-label" id="recentLabel" hidden>Naposledy</h3>
+  <ul class="sheet-list" id="recentPlaces"></ul>
+
+  <p class="sheet-footnote">
+    Uložená místa počítá pipeline z plné mřížky ALADIN a nesou i vítr. Ostatní
+    místa se čtou z mřížky po dvou kilometrech, bez větru.
+  </p>
+</dialog>
+
 <footer>
   <p id="runline"></p>
+  <p id="gridline" hidden></p>
   <p id="ageline">Stáří předpovědi: <span id="age">—</span> <span class="badge" id="offline" hidden>zastaralé</span></p>
-  <p>Zdroj dat: ČHMÚ, model ALADIN (CC BY 4.0)</p>
+  <p>Zdroj dat: ČHMÚ, model ALADIN (CC BY 4.0). Názvy míst: ČÚZK, Geonames.</p>
 </footer>
 
+<script src="area.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

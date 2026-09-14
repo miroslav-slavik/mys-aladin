@@ -55,10 +55,52 @@ body {
   padding: 12px 16px 8px;
 }
 
+/* A long name, and a place named by its coordinates is long, must shorten
+   rather than push the time and the reload button onto a second line. */
+.place-heading { min-width: 0; }
+.topbar-right { flex: 0 0 auto; }
+
 h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 
+/* The place name is the way into the panel, so it looks like the heading it
+   is and behaves like the button it also is. */
+.place-heading { margin: 0; min-width: 0; }
+
+.place-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.place-button svg { color: var(--muted); flex: 0 0 auto; }
+.place-button #place { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.chip {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--axis);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
 .topbar-right { display: flex; align-items: center; gap: 8px; }
-.when { margin: 0; font-size: 15px; color: var(--ink-2); }
+.when { margin: 0; font-size: 15px; color: var(--ink-2); white-space: nowrap; }
 
 .refresh {
   display: grid;
@@ -139,6 +181,123 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .icon-rain { color: var(--rain); }
 .icon-wind { color: var(--wind); }
 .icon-cloud { color: var(--cloud); }
+
+/* A place read from the area pack has no wind: one class on the body takes it
+   off the screen, in the header, in the switcher and in the table. */
+body.no-wind .now-side .wind,
+body.no-wind .views button[data-view="wind"],
+body.no-wind #dataTable .wind { display: none; }
+
+/* The place panel ----------------------------------------------------- */
+
+.sheet {
+  width: min(460px, 100%);
+  max-height: 86vh;
+  margin: auto auto 0;
+  padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  overflow-y: auto;
+}
+
+.sheet::backdrop { background: rgba(0, 0, 0, 0.6); }
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.sheet-head h2 { margin: 0; font-size: 18px; }
+
+.sheet-close {
+  display: grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  color: var(--ink-2);
+  background: var(--plane);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.sheet-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--plane);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.sheet-action svg { color: var(--wind); }
+
+.sheet-search {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  font: inherit;
+  /* Under sixteen pixels Safari zooms the page when the field takes focus. */
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--plane);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.sheet-list { list-style: none; margin: 0; padding: 0; }
+
+.sheet-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--grid);
+  cursor: pointer;
+  text-align: left;
+}
+
+.sheet-item.is-current { color: var(--temp-line); }
+.sheet-detail { color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+.sheet-label {
+  margin: 16px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.sheet-note {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #eda100;
+  color: #eda100;
+  font-size: 14px;
+}
+
+.sheet-footnote { margin: 16px 0 0; color: var(--muted); font-size: 12px; }
 
 /* Hourly icons ------------------------------------------------------- */
 

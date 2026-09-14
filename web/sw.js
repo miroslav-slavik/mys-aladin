@@ -3,14 +3,23 @@
    forecast stays in the cache as the offline fallback. */
 "use strict";
 
-const CACHE = "mys-aladin-v16";
+const CACHE = "mys-aladin-v17";
 const FORECAST = "data/forecast.json";
+
+/* Tiles of the area pack live in their own cache, so that a few places looked
+   up on the road cannot push the shell of the app out of storage. Only the
+   last few are kept; the rest is a fetch away. */
+const TILES = "mys-aladin-tiles-v1";
+const AREA = "data/area/";
+const TILE_LIMIT = 12;
 
 const SHELL = [
   "./",
   "index.html",
   "style.css",
   "app.js",
+  "area.js",
+  "places.json",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",
@@ -30,7 +39,13 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((names) => Promise.all(names.filter((name) => name !== CACHE).map((name) => caches.delete(name))))
+      .then((names) =>
+        Promise.all(
+          names
+            .filter((name) => name !== CACHE && name !== TILES)
+            .map((name) => caches.delete(name))
+        )
+      )
       .then(() => self.clients.claim())
   );
 });
@@ -63,6 +78,32 @@ async function cacheFirst(request) {
   return response;
 }
 
+/* A tile belongs to one model run, so the network decides and the cache is
+   only the answer when there is none. */
+async function tileFirst(request) {
+  const cache = await caches.open(TILES);
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      await cache.put(request, response.clone());
+      await trim(cache);
+    }
+    return response;
+  } catch (error) {
+    const cached = await cache.match(request);
+    if (!cached) throw error;
+    return cached;
+  }
+}
+
+async function trim(cache) {
+  const keys = await cache.keys();
+  // Oldest first: keys() returns them in insertion order.
+  for (const key of keys.slice(0, Math.max(0, keys.length - TILE_LIMIT))) {
+    await cache.delete(key);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
@@ -71,6 +112,10 @@ self.addEventListener("fetch", (event) => {
 
   if (url.pathname.endsWith(FORECAST)) {
     event.respondWith(networkFirst(request));
+    return;
+  }
+  if (url.pathname.includes(AREA)) {
+    event.respondWith(tileFirst(request));
     return;
   }
   event.respondWith(cacheFirst(request));

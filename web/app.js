@@ -23,7 +23,22 @@ const DAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
    table still lists every hour. */
 const CHART_HOURS = 60;
 
-const state = { series: [], view: "temperature", fromCache: false, generatedAt: 0 };
+const state = {
+  series: [],
+  view: "temperature",
+  fromCache: false,
+  generatedAt: 0,
+  forecast: null,
+  /* The place on screen. A listed one comes from the pipeline at the full
+     resolution of the source and carries all five quantities; a point comes
+     from the area pack, about two kilometres away and without wind. */
+  place: null,
+  hasWind: true,
+};
+
+const STORED_PLACE = "mys-aladin.place";
+const STORED_RECENT = "mys-aladin.recent";
+const RECENT_LIMIT = 6;
 
 function el(name, attrs = {}, parent = null) {
   const node = document.createElementNS(SVG_NS, name);
@@ -536,7 +551,9 @@ function currentRow(series) {
 function showHeader(row) {
   document.getElementById("nowTemp").textContent = `${row.t2m.toFixed(1)} °C`;
   document.getElementById("nowRain").textContent = `${row.precip_mm.toFixed(1)} mm/h`;
-  document.getElementById("nowWind").textContent = `${row.wind_ms.toFixed(1)} m/s`;
+  if (state.hasWind) {
+    document.getElementById("nowWind").textContent = `${row.wind_ms.toFixed(1)} m/s`;
+  }
   document.getElementById("nowCloud").textContent = `${row.cloud_pct} %`;
   const today = new Date().getDate() === row.date.getDate();
   document.getElementById("when").textContent =
@@ -556,15 +573,16 @@ function fillTable(series) {
     if (previousDay !== null && row.date.getDate() !== previousDay) tr.className = "day-start";
     previousDay = row.date.getDate();
     const cells = [
-      `${DAYS[row.date.getDay()]} ${hhmm(row.date)}`,
-      row.t2m.toFixed(1),
-      row.precip_mm.toFixed(1),
-      String(row.cloud_pct),
-      `${row.wind_ms.toFixed(1)} · ${row.wind_dir}`,
+      [`${DAYS[row.date.getDay()]} ${hhmm(row.date)}`, ""],
+      [row.t2m.toFixed(1), ""],
+      [row.precip_mm.toFixed(1), ""],
+      [String(row.cloud_pct), ""],
+      [state.hasWind ? `${row.wind_ms.toFixed(1)} · ${row.wind_dir}` : "", "wind"],
     ];
-    cells.forEach((text, column) => {
+    cells.forEach(([text, className], column) => {
       const cell = document.createElement(column === 0 ? "th" : "td");
       if (column === 0) cell.scope = "row";
+      if (className) cell.className = className;
       cell.textContent = text;
       tr.appendChild(cell);
     });
@@ -575,6 +593,9 @@ function fillTable(series) {
 /* ---------- views ---------- */
 
 function selectView(name) {
+  // Wind belongs to the listed places only; a point read from the pack has
+  // none, and its button is hidden rather than left to draw an empty chart.
+  if (name === "wind" && !state.hasWind) name = "temperature";
   state.view = name;
   for (const button of document.querySelectorAll("#views button")) {
     button.classList.toggle("is-active", button.dataset.view === name);
@@ -615,21 +636,345 @@ function updateAge() {
 }
 
 function render(forecast, fromCache) {
-  const location = forecast.locations[0];
-  state.series = location.series.map((row) => ({ ...row, date: new Date(row.time) }));
+  state.forecast = forecast;
   state.fromCache = fromCache;
   state.generatedAt = Date.parse(forecast.generated_at);
 
-  document.getElementById("place").textContent = location.label || location.name;
   document.getElementById("runline").textContent =
     `Běh modelu ${formatMoment(forecast.run_id)}, aktualizováno ${formatMoment(forecast.generated_at)}`;
   updateAge();
 
+  const wanted = state.place || stored(STORED_PLACE) || listedPlaces()[0];
+  selectPlace(wanted);
+}
+
+/* ---------- places ---------- */
+
+function listedPlaces() {
+  if (!state.forecast) return [];
+  return state.forecast.locations.map((location) => ({
+    kind: "listed",
+    name: location.name,
+    label: location.label || location.name,
+    lat: location.lat,
+    lon: location.lon,
+  }));
+}
+
+function samePlace(one, other) {
+  if (!one || !other || one.kind !== other.kind) return false;
+  if (one.kind === "listed") return one.name === other.name;
+  return Math.abs(one.lat - other.lat) < 1e-4 && Math.abs(one.lon - other.lon) < 1e-4;
+}
+
+/* Browser storage is a convenience here, never a source of truth: a private
+   window or cleared site data makes it throw or come back empty, and the app
+   then simply opens on the first listed place. */
+function stored(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || null;
+  } catch (ignored) {
+    return null;
+  }
+}
+
+function keep(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (ignored) {
+    // Nothing to do: the choice lives for this visit only.
+  }
+}
+
+function rememberRecent(place) {
+  if (place.kind !== "point") return;
+  const recent = (stored(STORED_RECENT) || []).filter((other) => !samePlace(place, other));
+  recent.unshift(place);
+  keep(STORED_RECENT, recent.slice(0, RECENT_LIMIT));
+}
+
+/* Czech writes a decimal comma, and these two numbers are read by a person
+   rather than parsed by anything. */
+function decimal(value, places) {
+  return value.toFixed(places).replace(".", ",");
+}
+
+/* Two decimals are about a kilometre, which is finer than the grid the point
+   is looked up in and short enough to sit in the header. */
+function coordinateLabel(lat, lon) {
+  return `${decimal(lat, 2)} N ${decimal(lon, 2)} E`;
+}
+
+function applySeries(rows, hasWind) {
+  state.hasWind = hasWind;
+  document.body.classList.toggle("no-wind", !hasWind);
+  state.series = rows.map((row) => ({ ...row, date: new Date(row.time) }));
   renderNow(state.series);
   drawIconRow(state.series);
   fillTable(state.series);
   selectView(state.view);
 }
+
+function describePlace(place, answer) {
+  document.getElementById("place").textContent = place.label;
+  document.getElementById("placeChip").hidden = !answer;
+  const line = document.getElementById("gridline");
+  line.hidden = !answer;
+  if (answer) {
+    line.textContent =
+      `Mřížka po dvou kilometrech, nejbližší bod ${decimal(answer.distanceKm, 1)} km od místa.`;
+  }
+}
+
+async function showPlace(place) {
+  if (place.kind === "listed") {
+    const location = state.forecast.locations.find((one) => one.name === place.name);
+    if (!location) throw new Error(`místo ${place.name} v předpovědi není`);
+    state.place = place;
+    applySeries(location.series, true);
+    describePlace(place, null);
+  } else {
+    const answer = await AreaPack.seriesAt(place.lat, place.lon);
+    state.place = place;
+    applySeries(answer.rows, false);
+    describePlace(place, answer);
+    rememberRecent(place);
+  }
+  keep(STORED_PLACE, state.place);
+  renderPlaceLists();
+}
+
+function placeProblem(error) {
+  if (error instanceof AreaPack.OffGrid) {
+    return "Místo leží mimo doménu modelu ALADIN.";
+  }
+  if (error instanceof AreaPack.MissingPack) {
+    return "Předpověď pro místa mimo uložená zatím není publikovaná.";
+  }
+  return `Místo se nepodařilo zobrazit: ${error.message}`;
+}
+
+async function selectPlace(place) {
+  if (!place) return;
+  try {
+    await showPlace(place);
+    report("");
+    closePanel();
+  } catch (error) {
+    report(placeProblem(error));
+    const fallback = listedPlaces()[0];
+    if (fallback && !samePlace(place, fallback) && !state.series.length) {
+      await showPlace(fallback).catch(() => {});
+    }
+  }
+}
+
+/* A problem with a place belongs where the user is looking: in the panel when
+   it is open, and on the page itself when the place came from the previous
+   visit and nobody opened anything. */
+function report(message) {
+  const box = document.getElementById("error");
+  if (panel.open) {
+    note(message);
+    box.hidden = true;
+    return;
+  }
+  note("");
+  box.hidden = !message;
+  box.textContent = message;
+}
+
+/* ---------- the place panel ---------- */
+
+const panel = document.getElementById("placePanel");
+const searchField = document.getElementById("placeSearch");
+
+let names = null;
+let namesPromise = null;
+
+/* The municipality list is bundled with the app, so the search works offline
+   and asks nothing of anyone at runtime. It is fetched on the first use of
+   the panel rather than at start-up, because most openings of the app never
+   need it. */
+function placeNames() {
+  if (!namesPromise) {
+    namesPromise = fetch("places.json")
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((document_) => {
+        names = document_.places.map(([name, district, lat, lon]) => ({
+          name,
+          district,
+          lat,
+          lon,
+          key: foldAccents(name),
+        }));
+        return names;
+      })
+      .catch((error) => {
+        namesPromise = null;
+        throw error;
+      });
+  }
+  return namesPromise;
+}
+
+function foldAccents(text) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+const COORDINATES = /^\s*(-?\d{1,2}(?:[.,]\d+)?)[\s,;]+(-?\d{1,3}(?:[.,]\d+)?)\s*$/;
+
+function parseCoordinates(query) {
+  const found = COORDINATES.exec(query);
+  if (!found) return null;
+  const lat = Number(found[1].replace(",", "."));
+  const lon = Number(found[2].replace(",", "."));
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return { kind: "point", label: coordinateLabel(lat, lon), lat, lon };
+}
+
+function search(query) {
+  const needle = foldAccents(query.trim());
+  if (!names || needle.length < 2) return [];
+  const starts = [];
+  const inside = [];
+  for (const place of names) {
+    if (place.key.startsWith(needle)) starts.push(place);
+    else if (place.key.includes(needle)) inside.push(place);
+  }
+  return starts.concat(inside).slice(0, 8);
+}
+
+/* A point from the phone deserves a name, so it is labelled after the nearest
+   municipality when there is one close enough, and by its coordinates when
+   there is not. */
+function nameFor(lat, lon) {
+  if (!names) return coordinateLabel(lat, lon);
+  let best = null;
+  let bestDistance = Infinity;
+  for (const place of names) {
+    const distance = (place.lat - lat) ** 2 + ((place.lon - lon) * 0.64) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = place;
+    }
+  }
+  // Roughly five kilometres, in the squared degrees measured above.
+  return best && bestDistance < 0.002 ? best.name : coordinateLabel(lat, lon);
+}
+
+function note(message) {
+  const element = document.getElementById("panelNote");
+  element.textContent = message;
+  element.hidden = !message;
+}
+
+function placeItem(place, detail) {
+  const item = document.createElement("li");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "sheet-item";
+  if (samePlace(place, state.place)) button.classList.add("is-current");
+  const name = document.createElement("span");
+  name.textContent = place.label;
+  button.appendChild(name);
+  if (detail) {
+    const hint = document.createElement("span");
+    hint.className = "sheet-detail";
+    hint.textContent = detail;
+    button.appendChild(hint);
+  }
+  button.addEventListener("click", () => selectPlace(place));
+  item.appendChild(button);
+  return item;
+}
+
+function fillList(id, items) {
+  const list = document.getElementById(id);
+  list.textContent = "";
+  for (const item of items) list.appendChild(item);
+  return list;
+}
+
+function renderPlaceLists() {
+  fillList("listedPlaces", listedPlaces().map((place) => placeItem(place, "1 km, s větrem")));
+  const recent = stored(STORED_RECENT) || [];
+  fillList(
+    "recentPlaces",
+    recent.map((place) => {
+      const coordinates = coordinateLabel(place.lat, place.lon);
+      // A place already named by its coordinates needs no second copy of them.
+      return placeItem(place, place.label === coordinates ? "" : coordinates);
+    })
+  );
+  document.getElementById("recentLabel").hidden = recent.length === 0;
+}
+
+function renderResults() {
+  const query = searchField.value;
+  const coordinates = parseCoordinates(query);
+  const items = coordinates
+    ? [placeItem(coordinates, "zadané souřadnice")]
+    : search(query).map((place) =>
+        placeItem(
+          { kind: "point", label: place.name, lat: place.lat, lon: place.lon },
+          place.district
+        )
+      );
+  fillList("placeResults", items);
+}
+
+function openPanel() {
+  renderPlaceLists();
+  note("");
+  searchField.value = "";
+  fillList("placeResults", []);
+  if (typeof panel.showModal === "function") panel.showModal();
+  else panel.setAttribute("open", "");
+  placeNames().then(renderResults).catch(() => {
+    note("Seznam obcí se nepodařilo načíst, souřadnice zadat lze.");
+  });
+}
+
+function closePanel() {
+  if (typeof panel.close === "function" && panel.open) panel.close();
+  else panel.removeAttribute("open");
+}
+
+document.getElementById("placeButton").addEventListener("click", openPanel);
+document.getElementById("closePanel").addEventListener("click", closePanel);
+searchField.addEventListener("input", renderResults);
+searchField.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  const first = document.querySelector("#placeResults .sheet-item");
+  if (first) first.click();
+});
+
+document.getElementById("useLocation").addEventListener("click", () => {
+  if (!navigator.geolocation) {
+    note("Prohlížeč polohu neposkytuje.");
+    return;
+  }
+  note("Zjišťuji polohu…");
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords;
+      await placeNames().catch(() => {});
+      selectPlace({
+        kind: "point",
+        label: nameFor(latitude, longitude),
+        lat: Number(latitude.toFixed(4)),
+        lon: Number(longitude.toFixed(4)),
+      });
+    },
+    (error) => note(`Polohu se nepodařilo zjistit: ${error.message}`),
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+  );
+});
 
 async function load(force = false) {
   // The cache buster is for the CDN in front of Pages: without it a forced

@@ -15,6 +15,11 @@ autentizace, žádný trvale běžící server.
     souřadnice z RÚIAN (kód adresního místa 25225472), WGS-84. Nejbližší bod
     mřížky CZ_1km leží 272 m daleko na 50,1110 N a 14,5620 E.
   - Další místa lze přidat později, schéma i pipeline s více místy počítají.
+- **Místo zadané v aplikaci:** kromě vyjmenovaných míst umí aplikace ukázat
+  předpověď pro libovolný bod v doméně modelu, zadaný polohou telefonu,
+  hledáním obce nebo souřadnicemi. Data pro něj nese plošný balík: mřížka
+  prořídlá na 2 km, veličiny teplota, srážky a oblačnost, bez větru. Vítr
+  a plné rozlišení 1 km zůstávají výsadou vyjmenovaných míst.
 - **Hosting:** GitHub Actions (cron) + GitHub Pages
 
 ## Zdroj dat
@@ -102,6 +107,13 @@ Návrh k upřesnění ve Fázi 2 podle skutečných jednotek zjištěných ve F�
   ]
 }
 ```
+
+## Plošný balík
+
+Druhý výstup pipeline vedle `data/forecast.json`. Nese prořídlou mřížku pro
+místa zadaná v aplikaci a do gitu nepatří, protože má 13 MB na běh: zapisuje se
+do `build/area` a na Pages se dostane přes cache Actions. Formát dlaždic i
+`index.json` popisuje `docs/pipeline.md`.
 
 ## Fáze práce
 

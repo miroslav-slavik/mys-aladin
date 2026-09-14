@@ -84,6 +84,55 @@ Kreslí se v 32 px, aby byly na telefonu čitelné na první pohled. Kolik se ji
 do řádku vejde, tolik se jich ukáže, a krok se zaokrouhlí na celé hodiny: na
 šířce iPhonu vychází ikona po šesti hodinách.
 
+## Volba místa
+
+Název místa v hlavičce je tlačítko a otevírá panel míst. Ten nabízí tři cesty,
+jak se dostat k předpovědi pro místo, které pipeline nezná:
+
+- **Moje poloha** přes `navigator.geolocation`. Bod se pojmenuje podle nejbližší
+  obce, pokud leží do zhruba pěti kilometrů, jinak podle souřadnic.
+- **Hledání podle názvu obce.** Seznam 6 256 obcí je zabalený v aplikaci
+  (`web/places.json`, 267 kB, po gzipu 77 kB), takže hledání funguje offline a
+  aplikace za běhu nikam nevolá. Hledá se bez ohledu na diakritiku, takže
+  „sumper" najde Šumperk. Seznam vyrábí `scripts/make-places.py` ze služby
+  Geonames ČÚZK; spouští se ručně, není součástí plánovaného běhu.
+- **Souřadnice** zadané jako „50,11 14,56" nebo „50.11, 14.56".
+
+Zvolené místo se pamatuje v `localStorage`, takže aplikace se otevře tam, kde
+naposledy skončila, a posledních šest bodů zůstává v panelu k opakovanému
+výběru. Když je úložiště nedostupné, aplikace se prostě otevře na prvním
+uloženém místě.
+
+### Dvě třídy míst
+
+| | Uložená místa | Místo zadané v aplikaci |
+|---|---|---|
+| Zdroj | `data/forecast.json` | dlaždice plošného balíku |
+| Mřížka | 1 km | 2 km, u názvu je odznak „2 km" |
+| Veličiny | všech pět | teplota, srážky, oblačnost |
+| Vítr | ano | ne |
+
+Vítr v plošném balíku není, takže se u zadaného místa skryje: tlačítko **Vítr**
+zmizí z přepínače, dlaždice s větrem z hlavičky a sloupec z tabulky. Řídí to
+jediná třída `no-wind` na `body`, zbytek je v CSS. Kdyby byl zrovna aktivní
+pohled na vítr, přepne se na teplotu.
+
+Patička u zadaného místa uvádí, jak daleko leží nejbližší bod mřížky. Bod mimo
+doménu modelu panel odmítne se srozumitelnou hláškou, stejně jako situaci, kdy
+plošný balík ještě není publikovaný; v obou případech zůstane na obrazovce
+poslední funkční místo.
+
+### Čtení dlaždice
+
+Kód je v `web/area.js` a o formátu nic nepředpokládá: počátek a krok mřížky,
+velikost dlaždice, pořadí veličin i jejich měřítka bere z `data/area/index.json`.
+Z indexu se spočítá nejbližší bod, z něj dlaždice, a z ní se přečte celá časová
+řada jednoho bodu. Hodnoty se čtou přes `DataView` po jednotlivých číslech,
+nikoli typovaným polem nad `ArrayBuffer`, aby na zarovnání sekcí nezáleželo.
+
+Řádky mají stejný tvar jako řádky z `forecast.json`, takže graf, ikony
+i tabulka nepoznají, odkud data přišla. Popis formátu je v `pipeline.md`.
+
 ## Vzhled
 
 Aplikace má jen tmavou podobu, stejně jako předloha. Barvy jsou tmavé kroky
@@ -125,6 +174,11 @@ i bez čtení grafu. Noc je v grafu podbarvená.
 Service worker ukládá skořápku aplikace a poslední předpověď. Předpověď se
 načítá strategií „nejdřív síť", takže nový běh vždy vyhraje, a při výpadku se
 použije uložená kopie.
+
+Dlaždice plošného balíku mají vlastní cache `mys-aladin-tiles-v1` a drží se
+z nich posledních dvanáct. Oddělená cache brání tomu, aby pár míst prohlédnutých
+na cestách vytlačilo skořápku aplikace; dlaždice patří jednomu běhu modelu,
+takže i u nich rozhoduje síť a uložená kopie je až náhradní odpověď.
 
 Patička vždy uvádí stáří předpovědi, počítané z pole `generated_at`, a jednou
 za minutu je přepočítá, aby údaj neustrnul u aplikace nechané otevřené. Když
