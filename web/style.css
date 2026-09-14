@@ -19,8 +19,9 @@
 
   --night: rgba(0, 0, 0, 0.45);
   /* Every other day in the chart stands a shade higher than the plane, enough
-     to separate the days and no more. */
-  --day-band: rgba(255, 255, 255, 0.035);
+     to separate the days and no more. It stays a background: night bands, the
+     grid, the curve and everything else are drawn over it. */
+  --day-band: rgba(255, 255, 255, 0.06);
 }
 
 * { box-sizing: border-box; }
