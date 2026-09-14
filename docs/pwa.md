@@ -114,6 +114,14 @@ jak se dostat k předpovědi pro místo, které pipeline nezná:
   Geonames ČÚZK; spouští se ručně, není součástí plánovaného běhu.
 - **Souřadnice** zadané jako „50,11 14,56" nebo „50.11, 14.56".
 
+Panel je přisazený k dolní hraně obrazovky a jeho výška se počítá z toho, co je
+skutečně vidět, ne z `vh`. Safari na iPhonu totiž počítá `vh` i s plochou za
+lištami prohlížeče a pevně umístěné prvky váže na rozvržení stránky, ne na
+viditelnou část, takže panel sahal pod okraj displeje a po vyvolání klávesnice
+zmizel za ní. Použije se `dvh` a nad tím ještě dopočet z `window.visualViewport`
+při otevření panelu a při každé změně viditelné plochy. Ověřeno v prohlížeči
+i pro případ zmenšené viditelné plochy, který odpovídá vysunuté klávesnici.
+
 Zvolené místo se pamatuje v `localStorage`, takže aplikace se otevře tam, kde
 naposledy skončila, a posledních šest bodů zůstává v panelu k opakovanému
 výběru. Když je úložiště nedostupné, aplikace se prostě otevře na prvním

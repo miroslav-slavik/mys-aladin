@@ -193,16 +193,29 @@ body.no-wind #dataTable .wind { display: none; }
 
 /* The place panel ----------------------------------------------------- */
 
+/* The panel is anchored to the bottom edge of the screen rather than laid out
+   by auto margins, and its height is measured in dynamic viewport units. A
+   plain vh on iOS counts the space behind the browser toolbars, so the sheet
+   grew taller than the screen and its lower part - the saved places and the
+   offer to keep the shown one - ended up below the edge with no way to scroll
+   to it. */
 .sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
   width: min(460px, 100%);
-  max-height: 86vh;
-  margin: auto auto 0;
+  max-height: 85vh;
+  max-height: 85dvh;
+  margin: 0 auto;
   padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px 16px 0 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .sheet::backdrop { background: rgba(0, 0, 0, 0.6); }

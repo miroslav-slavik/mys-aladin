@@ -1023,7 +1023,28 @@ function renderResults() {
   fillList("placeResults", items);
 }
 
+/* iOS measures a plain vh against the screen without the browser toolbars, and
+   keeps fixed elements anchored to the layout viewport rather than to what is
+   on screen. The panel could therefore reach below the edge of the display,
+   with the lower part of it unreachable, and disappear behind the keyboard as
+   soon as the search field took focus. The visual viewport knows what is
+   actually visible, so the sheet is measured and placed from it whenever the
+   browser offers one. */
+function fitPanel() {
+  const view = window.visualViewport;
+  if (!view) return;
+  const below = Math.max(0, window.innerHeight - (view.height + view.offsetTop));
+  panel.style.bottom = `${below}px`;
+  panel.style.maxHeight = `${Math.round(view.height * 0.85)}px`;
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", fitPanel);
+  window.visualViewport.addEventListener("scroll", fitPanel);
+}
+
 function openPanel() {
+  fitPanel();
   renderPlaceLists();
   note("");
   searchField.value = "";
