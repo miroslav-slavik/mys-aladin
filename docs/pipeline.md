@@ -74,6 +74,13 @@ mřížky, tedy krok asi dva kilometry, rozřezaný na dlaždice.
 | Velikost | 13,1 MB na běh, největší dlaždice 50,6 kB, po gzipu asi 17 kB |
 | Zápis | do 0,3 sekundy, měřeno na plné velikosti |
 
+**Co prořídnutí stojí na přesnosti.** Měřeno na běhu `2026-09-14T12:00Z` pro
+domácí místo: bod prořídlé mřížky se od bodu plné mřížky liší v průměru
+o 0,30 °C a nejvýše o 0,56 °C přes všech 73 kroků. Kyje leží v rovině, takže
+v členitém terénu bude rozdíl větší; přesně proto zůstávají vyjmenovaná místa
+na plném rozlišení. Čtení celé mřížky trvá 1,1 sekundy na veličinu, což k době
+běhu přidá necelé čtyři sekundy.
+
 Vítr v balíku není. Stál by další dva bajty na bod a hodinu u veličiny, která
 je pro čtení předpovědi nejméně podstatná, a u vyjmenovaných míst je k
 dispozici tak jako tak. Oblačnost naopak zůstává, přestože také není hlavní:
