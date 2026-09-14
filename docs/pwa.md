@@ -58,6 +58,10 @@ v barvě podkladu, aby zůstaly čitelné i tam, kde za nimi vede čára.
 a pozítří mají o odstín světlejší pozadí (`--day-band`, bílá s krytím 0,06).
 Graf se tím čte jako dnešek proti tomu, co teprve přijde.
 
+Noc se v grafu nepodbarvuje. Dřív měla vlastní tmavý pás přes hodiny 21 až 6,
+ale vedle podkladu dnů začalo být pásů v grafu příliš; noc nese řádek ikon
+s měsícem a hodiny na ose.
+
 Podklad je pozadí ve stejném smyslu jako mřížka a **ořezává se stejným
 `clipPath`**, takže se skrz poloprůhlednou výplň grafu vůbec neprojeví. Bez
 toho prosvítal a působil, jako by ležel před grafem. Důsledek je, že v
@@ -199,7 +203,7 @@ Svislá linka **teď** je světle žlutá, aby ji nešlo splést s čárkovaným
 ## Přístupnost a ovládání
 
 Tlačítko **Tabulka** přepne na všech 72 řádků, takže hodnoty jsou dostupné
-i bez čtení grafu. Noc je v grafu podbarvená.
+i bez čtení grafu.
 
 ## Offline a instalace
 

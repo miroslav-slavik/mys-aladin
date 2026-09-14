@@ -263,7 +263,6 @@ function drawChart(fullSeries, viewName) {
   const area = splinePath(points, base);
   defineGridClip(svg, width, area);
   drawDayBands(svg, series, x, base);
-  drawNightBands(svg, series, x, base);
   drawGrid(svg, series, niceTicks(lo, hi, 4), x, y, left, right, base);
 
   const areaFill = el("path", { d: area, fill: view.fill, opacity: 0.55 }, svg);
@@ -290,7 +289,11 @@ function defineGridClip(svg, width, area) {
    the axis: today keeps the plane of the page and every later day is lifted a
    shade, so the chart reads as today against what is still to come. The band
    is background like the grid, clipped the same way, so nothing of it shows
-   through the filled area. */
+   through the filled area.
+
+   Night is no longer shaded behind the curve: the hourly icons carry the moon,
+   the axis carries the hours, and one band over another made the chart busier
+   than it made it clearer. */
 function drawDayBands(svg, series, x, base) {
   const bands = el("g", { "clip-path": "url(#grid-clip)" }, svg);
   const midnight = (date) =>
@@ -319,22 +322,6 @@ function drawDayBands(svg, series, x, base) {
     }
     start = i;
   }
-}
-
-function drawNightBands(svg, series, x, base) {
-  let start = null;
-  series.forEach((row, i) => {
-    const hour = row.date.getHours();
-    const night = hour < 6 || hour >= 21;
-    if (night && start === null) start = i;
-    const last = i === series.length - 1;
-    if ((!night || last) && start !== null) {
-      const from = x(start);
-      const to = x(i);
-      el("rect", { class: "night-band", x: from, y: PAD_T, width: Math.max(to - from, 0), height: base - PAD_T }, svg);
-      start = null;
-    }
-  });
 }
 
 /* Precipitation keeps its own labelled scale on the right: sharing the

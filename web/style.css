@@ -17,10 +17,9 @@
   --cloud: #8f8e86;
   --now: #f2d98a;
 
-  --night: rgba(0, 0, 0, 0.45);
   /* Every other day in the chart stands a shade higher than the plane, enough
-     to separate the days and no more. It stays a background: night bands, the
-     grid, the curve and everything else are drawn over it. */
+     to separate the days and no more. It stays a background: the grid, the
+     curve and everything else are drawn over it. */
   --day-band: rgba(255, 255, 255, 0.06);
 }
 
@@ -381,7 +380,6 @@ main { padding: 0 8px; }
 }
 .tick { fill: var(--muted); font-size: 12px; }
 .day-label { fill: var(--ink-2); font-size: 13px; font-weight: 600; }
-.night-band { fill: var(--night); }
 .day-band { fill: var(--day-band); }
 .day-line { stroke: var(--axis); stroke-width: 1; }
 .value-label { fill: var(--ink); font-size: 13px; }
