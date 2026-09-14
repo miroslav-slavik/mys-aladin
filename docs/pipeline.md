@@ -124,6 +124,22 @@ plánované běhy v Actions se v provozu opožďovaly i o hodiny a jeden slot by
 vynechán. Většina běhů proto skončí bez akce, což je levné: čtení výpisu
 adresářů a nic víc.
 
+### Předání plošného balíku
+
+Balík se do repozitáře nedostane, a přitom ho musí nasadit workflow `pages`.
+Cestou mezi nimi je cache Actions. Běh `forecast`, který balík vyrobil, jej
+uloží pod klíčem `area-v1-{běh}-{číslo běhu workflow}`; workflow `pages` si
+před sestavením webu vyžádá cache podle předpony `area-v1-`, což vrátí
+nejnovější uloženou. Číslo běhu workflow je v klíči proto, aby vynucený
+přepočet téhož běhu modelu nenarazil na klíč, který už existuje, protože
+záznamy v cache se nepřepisují.
+
+Důsledek, na kterém záleží: nasazení vyvolané změnou v `web/` si vyzvedne
+balík z posledního běhu modelu, takže úprava rozhraní balík ze stránky
+neodstraní. Když cache chybí, například hned po zavedení této funkce, web se
+nasadí bez balíku a `scripts/build-site.sh` to vypíše. Aplikace pak zvládne jen
+vyjmenovaná místa.
+
 Ruční spuštění přes **Actions → forecast → Run workflow** má volitelný přepínač
 `force`. Bez něj se workflow chová stejně jako plánovaný běh. S ním předá
 pipeline `--force`, takže se předpověď přepočítá i pro už zpracovaný běh.

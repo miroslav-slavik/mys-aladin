@@ -49,9 +49,32 @@ jobs:
         run: python -m pytest tests -q
 
       - name: Build forecast
+        id: build
         # The scheduled runs never force; only a manual dispatch can, which is
         # what makes a publish testable outside the model's publication window.
-        run: python -m pipeline ${{ inputs.force && '--force' || '' }}
+        run: |
+          python -m pipeline ${{ inputs.force && '--force' || '' }}
+          # A run that found nothing new writes neither output, so there is
+          # nothing to hand over either.
+          if [ -d build/area ]; then
+            # Colons would be awkward in a cache key, so the run identifier
+            # goes in without them.
+            echo "run_id=$(python -c "import json;print(json.load(open('build/area/index.json'))['run_id'].replace(':',''))")" >> "$GITHUB_OUTPUT"
+            echo "area=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "area=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Hand the area pack to the deploy
+        # 13 MB per run must not enter the history, so the pack travels to the
+        # pages workflow through the cache instead of through a commit. The
+        # key carries the model run and the number of this workflow run, so a
+        # forced rebuild never collides with the pack it replaces.
+        if: steps.build.outputs.area == 'yes'
+        uses: actions/cache/save@v4
+        with:
+          path: build/area
+          key: area-v1-${{ steps.build.outputs.run_id }}-${{ github.run_id }}
 
       - name: Publish when the run changed
         run: |

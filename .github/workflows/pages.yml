@@ -34,6 +34,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Take the newest area pack
+        # The pack is not in the repository. Every forecast run that produced
+        # one saved it under a key starting with this prefix, and a partial
+        # match restores the most recent of them. A deploy triggered by a
+        # change in web/ therefore keeps the pack the last model run left,
+        # rather than removing it from the site until the next run.
+        uses: actions/cache/restore@v4
+        with:
+          path: build/area
+          # A key no run ever writes, so the prefix below always decides.
+          key: area-v1-none
+          restore-keys: |
+            area-v1-
+
       - name: Assemble the site
         run: ./scripts/build-site.sh site
 

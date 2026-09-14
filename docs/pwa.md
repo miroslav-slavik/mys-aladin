@@ -171,5 +171,11 @@ Spouští se při změně `web/` nebo předpovědi, ručně, a také po doběhnu
 workflow `forecast`. Poslední spouštěč je nutný: commit, který workflow
 `forecast` vytvoří přes `GITHUB_TOKEN`, sám o sobě další workflow nespustí.
 
+Kromě obsahu repozitáře bere nasazení ještě plošný balík, který v repozitáři
+není: vyzvedne si jej z cache Actions, kam ho uložil poslední běh `forecast`.
+Podrobnosti jsou v `pipeline.md`. Skript `scripts/build-site.sh` hledá balík
+v `build/area`, respektive v adresáři z proměnné `AREA_DIR`, a když ho
+nenajde, sestaví web bez něj.
+
 Před prvním nasazením je potřeba v **Settings → Pages** nastavit zdroj na
 **GitHub Actions**.
