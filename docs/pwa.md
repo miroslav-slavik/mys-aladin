@@ -145,8 +145,10 @@ jak se dostat k předpovědi pro místo, které pipeline nezná:
 - **Souřadnice** zadané jako „50,11 14,56" nebo „50.11, 14.56".
 
 Panel je plovoucí karta zvednutá 24 px nad dolní hranou, kde má prohlížeč
-vlastní lištu a telefon indikátor plochy, a jeho výška se počítá z toho, co je
-skutečně vidět, ne z `vh`. Safari na iPhonu totiž počítá `vh` i s plochou za
+vlastní lištu a telefon indikátor plochy. Vysoký je tolik, kolik potřebuje jeho
+obsah, nejvýše však na celou viditelnou plochu bez zvednutí a bez proužku
+nahoře; delší obsah se v něm roluje. Výška se počítá z toho, co je skutečně
+vidět, ne z `vh`. Safari na iPhonu totiž počítá `vh` i s plochou za
 lištami prohlížeče a pevně umístěné prvky váže na rozvržení stránky, ne na
 viditelnou část, takže panel sahal pod okraj displeje a po vyvolání klávesnice
 zmizel za ní. Použije se `dvh` a nad tím ještě dopočet z `window.visualViewport`

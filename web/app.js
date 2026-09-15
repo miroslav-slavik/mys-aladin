@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v27";
+const APP_VERSION = "v28";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -1112,7 +1112,7 @@ function fitPanel() {
   // The same lift the stylesheet gives it, kept when the keyboard decides
   // where the bottom of the screen is.
   panel.style.bottom = `${below + PANEL_LIFT}px`;
-  panel.style.maxHeight = `${Math.round(view.height * 0.78)}px`;
+  panel.style.maxHeight = `${Math.round(view.height) - PANEL_LIFT - 16}px`;
 }
 
 if (window.visualViewport) {

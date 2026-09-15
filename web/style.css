@@ -210,8 +210,10 @@ body.no-wind #dataTable .wind { display: none; }
   top: auto;
   width: auto;
   max-width: 460px;
-  max-height: 78vh;
-  max-height: 78dvh;
+  /* As tall as the screen allows, so that the content is cut as rarely as
+     possible: everything but the lift at the bottom and a strip at the top. */
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px - env(safe-area-inset-bottom));
   margin: 0 auto;
   padding: 16px;
   color: var(--ink);
