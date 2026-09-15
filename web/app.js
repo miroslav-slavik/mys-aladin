@@ -36,6 +36,11 @@ const state = {
   hasWind: true,
 };
 
+/* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
+   agree: the footer is only worth reading if the number in it is the one the
+   files were shipped with. */
+const APP_VERSION = "v25";
+
 const STORED_PLACE = "mys-aladin.place";
 const STORED_RECENT = "mys-aladin.recent";
 const RECENT_LIMIT = 6;
@@ -1167,7 +1172,31 @@ function watchForUpdates() {
   }).catch(() => {});
 }
 
+/* Which version is on screen, and which cache it came out of. The two differ
+   exactly when a new version has installed but the page still runs the old
+   one, which is the moment worth being able to see. */
+function showBuild() {
+  document.getElementById("appVersion").textContent = APP_VERSION;
+  const name = document.getElementById("cacheName");
+  const worker = navigator.serviceWorker && navigator.serviceWorker.controller;
+  if (!worker) {
+    name.textContent = "bez service workeru";
+    return;
+  }
+  const channel = new MessageChannel();
+  const answered = setTimeout(() => {
+    // An older worker knows no such message; saying so beats an empty dash.
+    name.textContent = "starší verze";
+  }, 1000);
+  channel.port1.onmessage = (event) => {
+    clearTimeout(answered);
+    name.textContent = (event.data && event.data.cache) || "—";
+  };
+  worker.postMessage("version", [channel.port2]);
+}
+
 window.addEventListener("load", watchForUpdates);
+window.addEventListener("load", showBuild);
 
 load();
 

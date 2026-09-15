@@ -449,6 +449,9 @@ footer {
 }
 
 footer p { margin: 0 0 2px; }
+/* A diagnostic line, so it sits below the rest of the footer in size but not
+   so far below it in contrast that it cannot be read. */
+#buildline { margin-top: 6px; font-size: 11px; }
 
 .badge {
   display: inline-block;

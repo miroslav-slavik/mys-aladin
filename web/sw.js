@@ -104,6 +104,13 @@ async function trim(cache) {
   }
 }
 
+/* The page shows which cache is serving it, so a version that refuses to go
+   away can be recognised rather than guessed at. */
+self.addEventListener("message", (event) => {
+  if (event.data !== "version" || !event.ports.length) return;
+  event.ports[0].postMessage({ cache: CACHE, tiles: TILES });
+});
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;

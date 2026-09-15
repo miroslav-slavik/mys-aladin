@@ -255,8 +255,15 @@ právě tu kopii, kterou se uživatel snaží nahradit.
 Instalace na iPhonu: Safari, tlačítko Sdílet, **Přidat na plochu**. Manifest
 nastaví samostatné okno bez adresního řádku, ikony jsou v `web/icons/`.
 
-Po změně souborů v `web/` je potřeba zvýšit `CACHE` v `web/sw.js`. Bez toho si
-zařízení podrží starou skořápku.
+Po změně souborů v `web/` je potřeba zvýšit `CACHE` v `web/sw.js` **a zároveň
+`APP_VERSION` v `web/app.js`**. Obě čísla hlídá `tests/test_web.py`, takže se
+nemohou rozejít.
+
+Poslední řádek patičky uvádí obojí: verzi aplikace, která je zapsaná v právě
+běžícím `app.js`, a název cache, na který odpoví service worker. Když se
+rozcházejí, je na obrazovce stará verze a nová už čeká nainstalovaná; po
+zavření a otevření aplikace se srovnají. Když stránku žádný worker neřídí,
+třeba při prvním otevření, řádek to říká místo názvu cache.
 
 **Nová verze se ukáže po jednom otevření.** Skořápka jde z cache, takže se nové
 soubory dostanou na obrazovku, až převezme řízení nový service worker. Sám od
