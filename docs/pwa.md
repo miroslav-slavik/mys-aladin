@@ -105,8 +105,24 @@ do řádku vejde, tolik se jich ukáže, a krok se zaokrouhlí na celé hodiny: 
 Název místa v hlavičce je tlačítko a otevírá panel míst. Ten nabízí tři cesty,
 jak se dostat k předpovědi pro místo, které pipeline nezná:
 
-- **Moje poloha** přes `navigator.geolocation`. Bod se pojmenuje podle nejbližší
-  obce, pokud leží do zhruba pěti kilometrů, jinak podle souřadnic.
+- **Moje poloha** přes `navigator.geolocation`. Není to jednorázová akce, ale
+  **režim**: ve výchozím stavu zapnutý, takže aplikace se otevírá tam, kde
+  právě je. Poloha se čte při každém otevření a při vynuceném načtení znovu.
+  Vypne ho výběr jakéhokoli jiného místa, zpět ho zapne ťuknutí na tuto volbu.
+  Stav drží `localStorage` pod klíčem `mys-aladin.follow`, a to jako objekt,
+  protože samotné `false` by se nedalo odlišit od prázdného úložiště.
+
+  Než se poloha zjistí, zůstává na obrazovce poslední místo; když se zjistit
+  nepodaří, zůstane tam taky a režim se nevypne, jen se důvod objeví v panelu.
+  Červené hlášení na stránce se při automatickém pokusu nezobrazuje, jinak by
+  po odepření polohy svítilo při každém startu. Sledovaná poloha se nezapisuje
+  mezi poslední místa, jinak by se seznam zaplnil skoro stejnými body.
+
+  Kroužek vedle názvu v hlavičce říká, že zobrazené místo přišlo z telefonu.
+  Není to totéž co zapnutý režim: režim může být zapnutý a čtení selhat.
+
+  Bod se pojmenuje podle nejbližšího místa, pokud leží do zhruba pěti
+  kilometrů, jinak podle souřadnic.
 - **Hledání podle názvu.** Seznam 15 279 míst je zabalený v aplikaci
   (`web/places.json`, 575 kB, po gzipu 196 kB), takže hledání funguje offline
   a aplikace za běhu nikam nevolá. Je v něm 6 256 obcí a 9 023 částí obcí,
@@ -128,7 +144,8 @@ jak se dostat k předpovědi pro místo, které pipeline nezná:
   odkazují indexem.
 - **Souřadnice** zadané jako „50,11 14,56" nebo „50.11, 14.56".
 
-Panel je přisazený k dolní hraně obrazovky a jeho výška se počítá z toho, co je
+Panel je plovoucí karta zvednutá 24 px nad dolní hranou, kde má prohlížeč
+vlastní lištu a telefon indikátor plochy, a jeho výška se počítá z toho, co je
 skutečně vidět, ne z `vh`. Safari na iPhonu totiž počítá `vh` i s plochou za
 lištami prohlížeče a pevně umístěné prvky váže na rozvržení stránky, ne na
 viditelnou část, takže panel sahal pod okraj displeje a po vyvolání klávesnice

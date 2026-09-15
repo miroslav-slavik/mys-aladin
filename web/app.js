@@ -39,9 +39,10 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v26";
+const APP_VERSION = "v27";
 
 const STORED_PLACE = "mys-aladin.place";
+const STORED_FOLLOW = "mys-aladin.follow";
 const STORED_RECENT = "mys-aladin.recent";
 const RECENT_LIMIT = 6;
 
@@ -685,8 +686,12 @@ function render(forecast, fromCache) {
     `Běh modelu ${formatMoment(forecast.run_id)}, aktualizováno ${formatMoment(forecast.generated_at)}`;
   updateAge();
 
+  // Something is on screen at once, even while the position is being read,
+  // which on a phone takes a moment and can fail outright.
   const wanted = promote(state.place || stored(STORED_PLACE) || listedPlaces()[0]);
   selectPlace(wanted);
+  setFollowing(following());
+  if (following()) followNow();
 }
 
 /* ---------- places ---------- */
@@ -740,8 +745,26 @@ function keep(key, value) {
   }
 }
 
+/* Following the phone is a mode rather than a one-off reading: it is on until
+   another place is chosen, and it survives to the next opening. On by default,
+   so the app opens on wherever it is. The value is an object because a bare
+   false would be indistinguishable from nothing stored at all. */
+function following() {
+  const kept = stored(STORED_FOLLOW);
+  return kept ? Boolean(kept.on) : true;
+}
+
+function setFollowing(on) {
+  keep(STORED_FOLLOW, { on });
+  const action = document.getElementById("useLocation");
+  action.classList.toggle("is-on", on);
+  document.getElementById("followState").textContent = on ? "zapnuto" : "vypnuto";
+}
+
 function rememberRecent(place) {
-  if (place.kind !== "point") return;
+  // A followed position would fill the list with near-identical points, and it
+  // is one tap away in any case.
+  if (place.kind !== "point" || place.auto) return;
   const recent = (stored(STORED_RECENT) || []).filter((other) => !samePlace(place, other));
   recent.unshift(place);
   keep(STORED_RECENT, recent.slice(0, RECENT_LIMIT));
@@ -771,6 +794,11 @@ function applySeries(rows, hasWind) {
 
 function describePlace(place, answer) {
   document.getElementById("place").textContent = place.label;
+  // The mark says that what is on screen came from the phone, which is not the
+  // same as the mode being on: the mode can be on and the reading have failed.
+  // An SVG element has no hidden property - that belongs to HTMLElement - so
+  // the attribute has to be set rather than assigned.
+  document.getElementById("followMark").toggleAttribute("hidden", !place.auto);
   document.getElementById("placeChip").hidden = !answer;
   const line = document.getElementById("gridline");
   line.hidden = !answer;
@@ -982,7 +1010,7 @@ function placeItem(place, detail) {
     hint.textContent = detail;
     button.appendChild(hint);
   }
-  button.addEventListener("click", () => selectPlace(place));
+  button.addEventListener("click", () => choosePlace(place));
   item.appendChild(button);
   return item;
 }
@@ -1075,12 +1103,16 @@ function renderResults() {
    soon as the search field took focus. The visual viewport knows what is
    actually visible, so the sheet is measured and placed from it whenever the
    browser offers one. */
+const PANEL_LIFT = 24;
+
 function fitPanel() {
   const view = window.visualViewport;
   if (!view) return;
   const below = Math.max(0, window.innerHeight - (view.height + view.offsetTop));
-  panel.style.bottom = `${below}px`;
-  panel.style.maxHeight = `${Math.round(view.height * 0.85)}px`;
+  // The same lift the stylesheet gives it, kept when the keyboard decides
+  // where the bottom of the screen is.
+  panel.style.bottom = `${below + PANEL_LIFT}px`;
+  panel.style.maxHeight = `${Math.round(view.height * 0.78)}px`;
 }
 
 if (window.visualViewport) {
@@ -1122,27 +1154,55 @@ searchField.addEventListener("keydown", (event) => {
   if (first) first.click();
 });
 
-document.getElementById("useLocation").addEventListener("click", () => {
-  if (!navigator.geolocation) {
-    note("Prohlížeč polohu neposkytuje.");
-    return;
+function locate() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("prohlížeč polohu neposkytuje"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve(position.coords),
+      (error) => reject(new Error(error.message)),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  });
+}
+
+/* Read the position and show it. The place list is loaded on the way, because
+   a point deserves the name of the quarter it is in rather than its
+   coordinates. A position that cannot be had leaves the screen as it is: the
+   mode stays on, so the next opening tries again. */
+async function followNow(announce = false) {
+  if (announce) note("Zjišťuji polohu…");
+  try {
+    const coords = await locate();
+    await placeNames().catch(() => {});
+    setFollowing(true);
+    await showPlace({
+      kind: "point",
+      auto: true,
+      label: nameFor(coords.latitude, coords.longitude),
+      lat: Number(coords.latitude.toFixed(4)),
+      lon: Number(coords.longitude.toFixed(4)),
+    });
+    report("");
+    if (announce) closePanel();
+  } catch (error) {
+    const message = `Polohu se nepodařilo zjistit: ${error.message}`;
+    // A refusal on opening would otherwise put a red box on the page at every
+    // single start; it belongs in the panel, where the mode can be turned off.
+    if (announce) report(message);
+    else note(message);
   }
-  note("Zjišťuji polohu…");
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const { latitude, longitude } = position.coords;
-      await placeNames().catch(() => {});
-      selectPlace({
-        kind: "point",
-        label: nameFor(latitude, longitude),
-        lat: Number(latitude.toFixed(4)),
-        lon: Number(longitude.toFixed(4)),
-      });
-    },
-    (error) => note(`Polohu se nepodařilo zjistit: ${error.message}`),
-    { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-  );
-});
+}
+
+/* Anything the user picks themselves ends the following. */
+function choosePlace(place) {
+  setFollowing(false);
+  selectPlace(place);
+}
+
+document.getElementById("useLocation").addEventListener("click", () => followNow(true));
 
 async function load(force = false) {
   // The cache buster is for the CDN in front of Pages: without it a forced

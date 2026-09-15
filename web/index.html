@@ -18,6 +18,10 @@
 <header class="topbar">
   <h1 class="place-heading">
     <button class="place-button" id="placeButton" type="button" aria-haspopup="dialog">
+      <svg class="follow-mark" id="followMark" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" hidden>
+        <circle cx="12" cy="12" r="4" fill="currentColor"/>
+        <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      </svg>
       <span id="place">Počasí</span>
       <span class="chip" id="placeChip" hidden>2 km</span>
       <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
@@ -149,6 +153,7 @@
             stroke-width="1.6" stroke-linecap="round"/>
     </svg>
     Moje poloha
+    <span class="state" id="followState">vypnuto</span>
   </button>
 
   <input class="sheet-search" id="placeSearch" type="search" autocomplete="off"

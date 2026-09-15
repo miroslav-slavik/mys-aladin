@@ -201,19 +201,23 @@ body.no-wind #dataTable .wind { display: none; }
    to it. */
 .sheet {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 8px;
+  right: 8px;
+  /* Lifted off the bottom edge, where the browser keeps its own bar and the
+     phone its home indicator. A card that floats reads as deliberate, so the
+     corners are rounded all round. */
+  bottom: calc(24px + env(safe-area-inset-bottom));
   top: auto;
-  width: min(460px, 100%);
-  max-height: 85vh;
-  max-height: 85dvh;
+  width: auto;
+  max-width: 460px;
+  max-height: 78vh;
+  max-height: 78dvh;
   margin: 0 auto;
-  padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+  padding: 16px;
   color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px 16px 0 0;
+  border-radius: 16px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -258,6 +262,15 @@ body.no-wind #dataTable .wind { display: none; }
 }
 
 .sheet-action svg { color: var(--wind); }
+
+/* The current position is a mode, not a one-off action: the row says whether
+   it is on. */
+.sheet-action.is-on { border-color: var(--wind); }
+.sheet-action .state { margin-left: auto; color: var(--muted); font-size: 13px; }
+.sheet-action.is-on .state { color: var(--wind); }
+
+/* More specific than the rule that greys every icon in the button. */
+.place-button .follow-mark { color: var(--wind); flex: 0 0 auto; }
 
 .sheet-search {
   width: 100%;
