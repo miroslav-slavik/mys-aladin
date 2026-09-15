@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v25";
+const APP_VERSION = "v26";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_RECENT = "mys-aladin.recent";
@@ -932,6 +932,34 @@ function nameFor(lat, lon) {
   return best && bestDistance < 0.002 ? best.name : coordinateLabel(lat, lon);
 }
 
+/* A point saved before the list knew the parts of municipalities carries its
+   coordinates as a name. The list is here now, so give it the name it would
+   get today - the selected place and the remembered ones alike. */
+function renameFromList() {
+  if (!names) return;
+
+  const renamed = (place) => {
+    if (!place || place.kind !== "point") return place;
+    // Only a place that never got a name of its own is touched.
+    if (place.label !== coordinateLabel(place.lat, place.lon)) return place;
+    const name = nameFor(place.lat, place.lon);
+    return name === place.label ? place : { ...place, label: name };
+  };
+
+  const recent = stored(STORED_RECENT) || [];
+  const renamedRecent = recent.map(renamed);
+  if (renamedRecent.some((place, index) => place !== recent[index])) {
+    keep(STORED_RECENT, renamedRecent);
+  }
+
+  const current = renamed(state.place);
+  if (current !== state.place) {
+    state.place = current;
+    keep(STORED_PLACE, current);
+    document.getElementById("place").textContent = current.label;
+  }
+}
+
 function note(message, kind = "warning") {
   const element = document.getElementById("panelNote");
   element.textContent = message;
@@ -1068,9 +1096,15 @@ function openPanel() {
   fillList("placeResults", []);
   if (typeof panel.showModal === "function") panel.showModal();
   else panel.setAttribute("open", "");
-  placeNames().then(renderResults).catch(() => {
-    note("Seznam obcí se nepodařilo načíst, souřadnice zadat lze.");
-  });
+  placeNames()
+    .then(() => {
+      renameFromList();
+      renderPlaceLists();
+      renderResults();
+    })
+    .catch(() => {
+      note("Seznam míst se nepodařilo načíst, souřadnice zadat lze.");
+    });
 }
 
 function closePanel() {

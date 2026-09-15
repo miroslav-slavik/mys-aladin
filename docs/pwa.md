@@ -136,6 +136,11 @@ zmizel za ní. Použije se `dvh` a nad tím ještě dopočet z `window.visualVie
 při otevření panelu a při každé změně viditelné plochy. Ověřeno v prohlížeči
 i pro případ zmenšené viditelné plochy, který odpovídá vysunuté klávesnici.
 
+Bod uložený dřív, než seznam znal části obcí, nese jako název své souřadnice.
+Při otevření panelu, kdy se seznam stejně načítá, aplikace takový název
+přepíše na nejbližší místo; týká se to zvoleného místa i posledních bodů.
+Místa, která už jednou název dostala, zůstávají beze změny.
+
 Zvolené místo se pamatuje v `localStorage`, takže aplikace se otevře tam, kde
 naposledy skončila, a posledních šest bodů zůstává v panelu k opakovanému
 výběru. Když je úložiště nedostupné, aplikace se prostě otevře na prvním
