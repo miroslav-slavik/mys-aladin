@@ -107,11 +107,25 @@ jak se dostat k předpovědi pro místo, které pipeline nezná:
 
 - **Moje poloha** přes `navigator.geolocation`. Bod se pojmenuje podle nejbližší
   obce, pokud leží do zhruba pěti kilometrů, jinak podle souřadnic.
-- **Hledání podle názvu obce.** Seznam 6 256 obcí je zabalený v aplikaci
-  (`web/places.json`, 267 kB, po gzipu 77 kB), takže hledání funguje offline a
-  aplikace za běhu nikam nevolá. Hledá se bez ohledu na diakritiku, takže
-  „sumper" najde Šumperk. Seznam vyrábí `scripts/make-places.py` ze služby
+- **Hledání podle názvu.** Seznam 15 279 míst je zabalený v aplikaci
+  (`web/places.json`, 575 kB, po gzipu 196 kB), takže hledání funguje offline
+  a aplikace za běhu nikam nevolá. Je v něm 6 256 obcí a 9 023 částí obcí,
+  tedy i městské čtvrti. Hledá se bez ohledu na diakritiku, takže „sumper"
+  najde Šumperk, a obec má přednost před částí, aby „Brno" našlo město, ne
+  Brno-Bystrc. Seznam vyrábí `scripts/make-places.py` ze dvou vrstev služby
   Geonames ČÚZK; spouští se ručně, není součástí plánovaného běhu.
+
+  Části obcí jsou v seznamu hlavně kvůli velkým městům a kvůli pojmenování
+  polohy z telefonu. Praha je jako obec jediný bod v centru, takže poloha
+  v Kyjích od něj leží asi 10,5 km a nejbližší samostatná obec je Radonice
+  5,1 km daleko; místo se pak pojmenovalo souřadnicemi. S částmi vyjde
+  nejbližší místo 0,6 km daleko, tedy Černý Most. Část pojmenovaná stejně jako
+  její obec se do seznamu nepřidává, protože už tam ta obec je; z 15 128
+  částí proto zbylo 9 023.
+
+  Podrobnosti u výsledků, tedy okres u obce a nadřazená obec u části, se
+  opakují po tisících, takže leží v tabulce `details` a řádky do ní jen
+  odkazují indexem.
 - **Souřadnice** zadané jako „50,11 14,56" nebo „50.11, 14.56".
 
 Panel je přisazený k dolní hraně obrazovky a jeho výška se počítá z toho, co je

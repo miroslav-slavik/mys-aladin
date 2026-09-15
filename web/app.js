@@ -853,9 +853,13 @@ function placeNames() {
         return response.json();
       })
       .then((document_) => {
-        names = document_.places.map(([name, district, lat, lon]) => ({
+        const details = document_.details || [];
+        names = document_.places.map(([name, kind, detail, lat, lon]) => ({
           name,
-          district,
+          // A part of a municipality: a quarter of a city, or a village that
+          // belongs to a larger one.
+          isPart: Boolean(kind),
+          detail: details[detail] || "",
           lat,
           lon,
           key: foldAccents(name),
@@ -885,6 +889,12 @@ function parseCoordinates(query) {
   return { kind: "point", label: coordinateLabel(lat, lon), lat, lon };
 }
 
+/* A municipality outranks a part of one, and a shorter name outranks a longer:
+   someone typing Brno means the city, not Brno-Bystrc. */
+function byRank(one, other) {
+  return one.isPart - other.isPart || one.name.length - other.name.length;
+}
+
 function search(query) {
   const needle = foldAccents(query.trim());
   if (!names || needle.length < 2) return [];
@@ -894,12 +904,14 @@ function search(query) {
     if (place.key.startsWith(needle)) starts.push(place);
     else if (place.key.includes(needle)) inside.push(place);
   }
-  return starts.concat(inside).slice(0, 8);
+  return starts.sort(byRank).concat(inside.sort(byRank)).slice(0, 8);
 }
 
 /* A point from the phone deserves a name, so it is labelled after the nearest
-   municipality when there is one close enough, and by its coordinates when
-   there is not. */
+   place when there is one close enough, and by its coordinates when there is
+   not. Parts of municipalities are in the list precisely for this: a position
+   in Prague would otherwise be measured against a single point downtown, ten
+   kilometres from wherever the phone actually is. */
 function nameFor(lat, lon) {
   if (!names) return coordinateLabel(lat, lon);
   let best = null;
@@ -1017,7 +1029,7 @@ function renderResults() {
     : search(query).map((place) =>
         placeItem(
           { kind: "point", label: place.name, lat: place.lat, lon: place.lon },
-          place.district
+          place.detail
         )
       );
   fillList("placeResults", items);
