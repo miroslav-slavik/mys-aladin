@@ -12,6 +12,10 @@
 
   --temp: #d95926;
   --temp-line: #eb6834;
+  /* Frost has a colour of its own, paler than the columns of precipitation so
+     that the two blues are never taken for one another. */
+  --cold: #8ec5f2;
+  --cold-line: #b9dcfa;
   --rain: #3987e5;
   --wind: #199e70;
   --cloud: #8f8e86;
@@ -487,6 +491,16 @@ main { padding: 0 8px; }
 .tip { pointer-events: none; }
 
 .rain-bar { fill: var(--rain); }
+
+/* The temperature is painted through a gradient whose two colours meet on the
+   freezing line, so a curve that crosses it changes colour exactly there. The
+   filled part carries its own transparency here rather than on the path,
+   because the cold half is given more of it: a pale blue laid on at the
+   weight of the warm half would sink into the plane of the page. */
+.warm-fill { stop-color: var(--temp); stop-opacity: 0.55; }
+.cold-fill { stop-color: var(--cold); stop-opacity: 0.8; }
+.warm-line { stop-color: var(--temp-line); }
+.cold-line { stop-color: var(--cold-line); }
 .wind-arrow { stroke: var(--ink-2); stroke-width: 1.1; fill: none; }
 
 /* Table -------------------------------------------------------------- */

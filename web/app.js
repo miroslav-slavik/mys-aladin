@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v43";
+const APP_VERSION = "v44";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -214,6 +214,7 @@ const VIEWS = {
     fill: "var(--temp)",
     pad: [2, 4],
     withRain: true,
+    freezing: true,
     format: (v) => v.toFixed(1),
   },
   wind: {
@@ -271,9 +272,23 @@ function drawChart(fullSeries, viewName) {
   drawDayBands(svg, series, x, base);
   drawGrid(svg, series, niceTicks(lo, hi, 4), x, y, left, right, base);
 
-  const areaFill = el("path", { d: area, fill: view.fill, opacity: 0.55 }, svg);
+  // Below freezing the temperature is drawn in the cold pair of colours. The
+  // change of colour is a gradient with both stops on the same line, so it
+  // falls exactly on nought degrees wherever the curve happens to cross it.
+  const paint = view.freezing ? defineFreezing(svg, y) : null;
+  const areaFill = el("path", {
+    d: area,
+    fill: paint ? paint.fill : view.fill,
+    // With a gradient the transparency is in its stops, not on the path.
+    opacity: paint ? 1 : 0.55,
+  }, svg);
   areaFill.setAttribute("stroke", "none");
-  el("path", { d: splinePath(points, null), fill: "none", stroke: view.color, "stroke-width": 2 }, svg);
+  el("path", {
+    d: splinePath(points, null),
+    fill: "none",
+    stroke: paint ? paint.stroke : view.color,
+    "stroke-width": 2,
+  }, svg);
 
   if (view.withRain) drawRain(svg, series, x, base, right);
   if (view.arrows) drawArrows(svg, series, x, base);
@@ -281,6 +296,31 @@ function drawChart(fullSeries, viewName) {
   drawTimeAxis(svg, series, x, base, left, right);
   drawNow(svg, series, x, base);
   attachCursor(svg, series, x, width);
+}
+
+/* Two gradients down the plot, one for the filled area and one for the curve,
+   each with its warm and its cold stop on the height of nought degrees. A
+   freezing line above the plot leaves the chart all cold, one below it leaves
+   it all warm, which is what clamping the offset to the plot does. */
+function defineFreezing(svg, y) {
+  const defs = el("defs", {}, svg);
+  const offset = Math.min(1, Math.max(0, (y(0) - PAD_T) / PLOT_H));
+  for (const [id, warm, cold] of [
+    ["freezing-fill", "warm-fill", "cold-fill"],
+    ["freezing-line", "warm-line", "cold-line"],
+  ]) {
+    const gradient = el("linearGradient", {
+      id,
+      gradientUnits: "userSpaceOnUse",
+      x1: 0,
+      y1: PAD_T,
+      x2: 0,
+      y2: PAD_T + PLOT_H,
+    }, defs);
+    el("stop", { offset, class: warm }, gradient);
+    el("stop", { offset, class: cold }, gradient);
+  }
+  return { fill: "url(#freezing-fill)", stroke: "url(#freezing-line)" };
 }
 
 /* Everything that belongs behind the chart - the day bands and the grid - is
