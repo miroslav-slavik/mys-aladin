@@ -533,6 +533,17 @@ footer p { margin: 0 0 2px; }
    so far below it in contrast that it cannot be read. */
 #buildline { margin-top: 6px; font-size: 11px; }
 
+/* The link to the run of the workflow is written in the colour of the line it
+   sits in, a tenth of the way lighter, and keeps a plain underline so that it
+   still reads as a link. The hexadecimal value is that same mix, for browsers
+   without color-mix. */
+#buildRun a {
+  color: #95938e;
+  color: color-mix(in srgb, currentColor 90%, #fff);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
 .badge {
   display: inline-block;
   margin-left: 6px;
