@@ -175,9 +175,10 @@ uloženém místě.
 | Vítr | ano | ne |
 
 Vítr v plošném balíku není, takže se u zadaného místa skryje: tlačítko **Vítr**
-zmizí z přepínače, dlaždice s větrem z hlavičky a sloupec z tabulky. Řídí to
-jediná třída `no-wind` na `body`, zbytek je v CSS. Kdyby byl zrovna aktivní
-pohled na vítr, přepne se na teplotu.
+zmizí z přepínače a sloupec z tabulky. Řídí to jediná třída `no-wind` na `body`,
+zbytek je v CSS. Kdyby byl zrovna aktivní pohled na vítr, přepne se na teplotu.
+V hlavičce řádek s větrem zůstává a místo hodnoty uvádí N/A, protože jeho
+zmizení by posunulo oblačnost z řádku srážek doprostřed bloku.
 
 Patička u zadaného místa uvádí, jak daleko leží nejbližší bod mřížky. Bod mimo
 doménu modelu panel odmítne se srozumitelnou hláškou, stejně jako situaci, kdy

@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v36";
+const APP_VERSION = "v37";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -628,8 +628,13 @@ function showHeader(row) {
   // The same room the temperature keeps for its sign, so that the two
   // readings of the left half begin on one line.
   rain.prepend(ghost("-"));
+  const wind = document.getElementById("nowWind");
   if (state.hasWind) {
-    fill(document.getElementById("nowWind"), `${row.wind_ms.toFixed(1)} m/s`, 3);
+    fill(wind, `${row.wind_ms.toFixed(1)} m/s`, 3);
+  } else {
+    // The row stays even where the pack carries no wind, so that the cloud
+    // below it keeps the line of the precipitation.
+    wind.textContent = "N/A";
   }
   fill(document.getElementById("nowCloud"), `${row.cloud_pct} %`, 3);
   const today = new Date().getDate() === row.date.getDate();

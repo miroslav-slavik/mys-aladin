@@ -131,7 +131,7 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 8px 16px;
+  gap: 6px 16px;
   padding: 10px 16px 14px 10px;
   border-top: 1px dashed var(--axis);
   border-bottom: 1px dashed var(--axis);
@@ -150,7 +150,16 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 /* The reading is aligned to the left edge of the page, starting on the same
    vertical line as the place name in the header, so the whole top of the
    screen shares one left edge. The padding of the section is that space. */
+/* All four readings are rows and columns of the section itself, each in a
+   rectangle of its own, so that the wind stands on the line of the
+   temperature and the cloud on the line of the precipitation. The two halves
+   are only wrappers holding them; their own boxes are of no use here. */
 .now-main { text-align: left; }
+.now-main, .now-side { display: contents; }
+.now-temp { grid-area: 1 / 1; }
+.now-rain { grid-area: 2 / 1; }
+.now-side .wind { grid-area: 1 / 2; }
+.now-side .cloud { grid-area: 2 / 2; }
 
 .now-temp {
   display: flex;
@@ -201,7 +210,7 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  margin: 6px 0 0;
+  margin: 0;
   font-size: var(--minor);
   color: var(--muted);
 }
@@ -223,7 +232,6 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 /* The right half is built like the left one: the icons stand in a column and
    the readings begin on one line beside them. The block as a whole stays at
    the right edge, where the auto column of the section holds it. */
-.now-side { margin: 0; display: grid; gap: 6px; }
 .now-side div { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
 .now-side .param-icon { width: 26px; }
 .now-side dt { display: flex; }
@@ -240,8 +248,8 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .icon-cloud { color: var(--cloud); }
 
 /* A place read from the area pack has no wind: one class on the body takes it
-   off the screen, in the header, in the switcher and in the table. */
-body.no-wind .now-side .wind,
+   off the screen, in the switcher and in the table. The header keeps its row
+   and says N/A there, so that the cloud stays on the line of the rain. */
 body.no-wind .views button[data-view="wind"],
 body.no-wind #dataTable .wind { display: none; }
 
