@@ -100,6 +100,7 @@ kterým veličinu zpřístupní `xarray`.
 |---|---|---|---|---|---|
 | `CLSTEMPERATURE` | 11 | `t2m` | K | 73 | 2 m |
 | `SURFPREC_TOTAL` | 61 | `unknown` | kg/m² (= mm) | 72 | povrch |
+| `SURFSNOWFALL` | 64 | `srweq` | kg/m² (= mm) | 72 | povrch |
 | `SURFNEBUL_TOTALE` | 171 | `unknown` | frakce 0 až 1 | 73 | povrch |
 | `CLSWIND_SPEED` | 32 | `ws` | m/s | 73 | 10 m |
 | `CLSWIND_DIREC` | 31 | `wdir` | stupně | 73 | 10 m |
@@ -127,9 +128,38 @@ zpřístupnit přes `backend_kwargs={"read_keys": ["indicatorOfParameter"]}`.
 |---|---|
 | `t2m` | `hodnota - 273.15`, tedy K na °C |
 | `precip_mm` | rozdíl sousedních kroků, viz níže; kg/m² odpovídá 1 mm |
+| `snow_mm` | totéž co `precip_mm`; je to část úhrnu, která padá jako sníh |
 | `cloud_pct` | `hodnota * 100`, frakce na procenta |
 | `wind_ms` | beze změny |
 | `wind_dir` | beze změny |
+
+### Sněhové srážky
+
+Doplněno 22. 9. 2026 nad během `2026-09-22T12:00Z`, při přípravě zimního
+zobrazení. Ověřeno stažením jediného souboru `SURFSNOWFALL`.
+
+`Popis_obsahu.xlsx` uvádí u tohoto parametru „srážky sněhové (kumul od startu
+předpovědi)" v kg/m², tedy tutéž konvenci jako u celkových srážek, a soubor
+tomu odpovídá i strukturou: má 72 kroků, o jeden méně než okamžité veličiny,
+stejně jako `SURFPREC_TOTAL`. Přímo z dat kumulaci potvrdit nešlo, protože
+v září je pole nad celou doménou prakticky nulové; největší hodnota po 72
+hodinách byla 0,084 mm.
+
+Na rozdíl od parametrů 61 a 171 je parametr 64 standardní podle WMO, takže jej
+ecCodes pojmenuje, a to `srweq`. Název ovšem odpovídá významu „rychlost
+sněžení ve vodní hodnotě" v jednotkách kg/m²/s, kdežto zdejší data jsou podle
+popisu kumulovaný úhrn v kg/m². Identifikace se tedy i zde opírá o název
+souboru a `indicatorOfParameter`, nikoli o název proměnné ani o její jednotku.
+
+Hodnoty jsou balené na omezený počet bitů, takže posloupnost kumulovaných
+úhrnů mírně kolísá, v měřeném bodě v řádu 0,0002 mm. Rozdíl sousedních kroků
+proto může vyjít nepatrně záporný; pipeline jej ořezává na nulu stejně jako
+u celkových srážek.
+
+Velikost souboru je mimo zimu zanedbatelná. V běhu `2026-09-22T12:00Z` měl
+`SURFSNOWFALL` po kompresi 0,12 MB, zatímco `SURFPREC_TOTAL` 22,87 MB
+a `CLSTEMPERATURE` 12,96 MB; pole samých nul se komprimuje téměř beze zbytku.
+V zimě bude větší, ale pořád v řádu jednotek megabajtů.
 
 ## Konvence srážek
 

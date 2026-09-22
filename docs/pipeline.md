@@ -14,7 +14,8 @@ za návrhem stojí. Ověřená fakta o zdrojových datech jsou v `parametry.md`.
 ```
 
 Běh nad novým během modelu trvá zhruba 40 sekund, z toho většinu zabere
-stažení asi 67 MB komprimovaných dat. Běh nad již zpracovaným během skončí
+stažení komprimovaných dat; v běhu `2026-09-22T12:00Z` to bylo 63 MB za šest
+souborů, z toho 0,12 MB připadlo na sníh. Běh nad již zpracovaným během skončí
 do pěti sekund, protože se nestahuje nic.
 
 ## Členění
@@ -107,8 +108,8 @@ mřížky, tedy krok asi dva kilometry, rozřezaný na dlaždice.
 |---|---|
 | Prořídnutí | `AREA_STRIDE = 2`, mřížka 251 × 145 = 36 395 bodů |
 | Dlaždice | `AREA_TILE = 12` bodů na stranu, 21 × 13 = 273 dlaždic |
-| Veličiny | teplota `int16` po 0,1 °C, srážky `uint16` po 0,1 mm, oblačnost `uint8` v procentech |
-| Velikost | 13,1 MB na běh, největší dlaždice 50,6 kB, po gzipu asi 17 kB |
+| Veličiny | teplota `int16` po 0,1 °C, srážky `uint16` po 0,1 mm, oblačnost `uint8` v procentech, sníh `uint8` po 0,1 mm |
+| Velikost | šest bajtů na bod a hodinu, tedy asi 15,7 MB na běh a největší dlaždice 60,7 kB; do přidání sněhu to bylo pět bajtů, 13,1 MB a 50,6 kB |
 | Zápis | do 0,3 sekundy, měřeno na plné velikosti |
 
 **Co prořídnutí stojí na přesnosti.** Měřeno na běhu `2026-09-14T12:00Z` pro
@@ -122,6 +123,11 @@ Vítr v balíku není. Stál by další dva bajty na bod a hodinu u veličiny, k
 je pro čtení předpovědi nejméně podstatná, a u vyjmenovaných míst je k
 dispozici tak jako tak. Oblačnost naopak zůstává, přestože také není hlavní:
 stojí jediný bajt a bez ní by nešly nakreslit hodinové ikony.
+
+Sníh stojí také jediný bajt, protože se počítá v desetinách milimetru vodní
+hodnoty a `uint8` tak sahá do 25,5 mm za hodinu; tolik sněhu za hodinu nenapadlo
+nikdy. Je to část celkového úhrnu, takže hodnota sněhu nikdy nepřevýší srážky
+nad sebou.
 
 ### Formát dlaždice
 
@@ -143,7 +149,7 @@ měřítka, `run_id` a `generated_at`. Aplikace tedy formát nikde neodhaduje.
 Krok mřížky se do indexu zapisuje změřený z dat, nikoli jako konstanta: ve
 směru délky vychází 0,01399°, nikoli kulatých 0,014°, jak uvádí dokumentace.
 
-Balík se zapisuje do `build/area`, tedy mimo git. Při 13,1 MB na běh a čtyřech
+Balík se zapisuje do `build/area`, tedy mimo git. Při 15,7 MB na běh a čtyřech
 nových bězích denně by historie repozitáře rostla zhruba o 50 MB denně, což je
 neúnosné. Publikaci řeší workflow, viz níže.
 

@@ -73,6 +73,17 @@ Půlnoc navíc kreslí silnější svislici než ostatní šestihodinové značk
 **Popisek na začátku křivky.** Vedle maxima a minima je označena i hodnota
 prvního kroku, aby bylo hned zřejmé, odkud předpověď vychází.
 
+**Zima má vlastní barvy.** Teplota pod nulou se kreslí studenou dvojicí barev
+`--cold` a `--cold-line`, bledě modrou, která je světlejší než sloupce srážek,
+takže se obě modři nepletou. Přechod obstarají dvě lineární výplně přes celou
+výšku grafu, jejichž obě zarážky leží na výšce nuly, takže se barva mění přesně
+na nule, ať křivka projde kudykoli. Studená polovina plochy je krytější než
+teplá, protože bledá modrá při krytí teplé poloviny na tmavém podkladu zaniká.
+Sníh, tedy část hodinového úhrnu spadlá jako sníh, se kreslí bíle od země
+vzhůru přes modrý sloupec, takže hodina samého sněhu je bílá celá a hodina
+smíšených srážek ukáže hranici mezi nimi. Data zapsaná dřív, než pipeline sníh
+četla, pole `snow_mm` nemají a sloupec pak vypadá jako dřív.
+
 **Směr větru nesou šipky, ne druhá osa.** Úhel na lineární ose nedává smysl,
 protože 359° a 1° by ležely na opačných koncích. Šipka letí po větru, tedy pryč
 od směru, odkud vane.

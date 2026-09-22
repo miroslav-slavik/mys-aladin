@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v44";
+const APP_VERSION = "v45";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -387,7 +387,17 @@ function drawRain(svg, series, x, base, right) {
   series.forEach((row, i) => {
     if (row.precip_mm <= 0) return;
     const h = Math.max(scale(row.precip_mm), 1.5);
-    el("rect", { class: "rain-bar", x: x(i) - barW / 2, y: base - h, width: barW, height: h, rx: Math.min(1.5, barW / 2) }, svg);
+    const rx = Math.min(1.5, barW / 2);
+    el("rect", { class: "rain-bar", x: x(i) - barW / 2, y: base - h, width: barW, height: h, rx }, svg);
+    // Snow is the part of the hour's total that falls as snow, drawn white
+    // over the column from the ground up: an hour of snow alone turns the
+    // whole column white, an hour of both shows where the line between them
+    // is. Data written before the model's snow was read carry none, and the
+    // column then stays as it was.
+    const snow = Math.min(row.snow_mm || 0, row.precip_mm);
+    if (snow <= 0) return;
+    const sh = Math.min(h, Math.max(scale(snow), 1.5));
+    el("rect", { class: "snow-bar", x: x(i) - barW / 2, y: base - sh, width: barW, height: sh, rx }, svg);
   });
 
 }
@@ -698,6 +708,7 @@ function fillTable(series) {
       [`${DAYS[row.date.getDay()]} ${hhmm(row.date)}`, ""],
       [row.t2m.toFixed(1), ""],
       [row.precip_mm.toFixed(1), ""],
+      [row.snow_mm === undefined ? "" : row.snow_mm.toFixed(1), "snow"],
       [String(row.cloud_pct), ""],
       [state.hasWind ? `${row.wind_ms.toFixed(1)} · ${row.wind_dir}` : "", "wind"],
     ];

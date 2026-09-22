@@ -146,6 +146,10 @@ AREA_FIELDS: tuple[AreaField, ...] = (
     AreaField("t2m", "int16", 10.0),        # 0.1 °C
     AreaField("precip_mm", "uint16", 10.0),  # 0.1 mm
     AreaField("cloud_pct", "uint8", 1.0),    # whole per cent
+    # Snow is the part of the precipitation above it that falls as snow, so a
+    # byte is enough: the tenth of a millimetre it counts in reaches 25.5 mm of
+    # water in an hour, which no hour of snow has ever come near.
+    AreaField("snow_mm", "uint8", 10.0),     # 0.1 mm
 )
 
 
@@ -175,6 +179,7 @@ class Parameter:
 PARAMETERS: tuple[Parameter, ...] = (
     Parameter("t2m", "CLSTEMPERATURE", 11, lambda v: v - 273.15, 1),
     Parameter("precip_mm", "SURFPREC_TOTAL", 61, lambda v: v, 1, accumulated=True),
+    Parameter("snow_mm", "SURFSNOWFALL", 64, lambda v: v, 1, accumulated=True),
     Parameter("cloud_pct", "SURFNEBUL_TOTALE", 171, lambda v: v * 100.0, None),
     Parameter("wind_ms", "CLSWIND_SPEED", 32, lambda v: v, 1),
     Parameter("wind_dir", "CLSWIND_DIREC", 31, lambda v: v, None),

@@ -43,6 +43,7 @@ def sample_grids(hours: int = 5, ny: int = 7, nx: int = 9) -> dict[str, np.ndarr
         "t2m": (hour + row / 10.0 + column / 100.0).astype("float64"),
         "precip_mm": (column / 10.0).astype("float64"),
         "cloud_pct": ((hour + row + column) % 101).astype("float64"),
+        "snow_mm": (row / 10.0).astype("float64"),
     }
 
 
@@ -107,8 +108,9 @@ def test_every_declared_tile_exists_and_the_edges_are_short(tmp_path):
         for tx in range(index["tiles"]["x"]):
             width = min(4, nx - tx * 4)
             height = min(4, ny - ty * 4)
-            # Two bytes for temperature and for precipitation, one for cloud.
-            expected = width * height * hours * 5
+            # Two bytes for temperature and for precipitation, one each for
+            # cloud and snow.
+            expected = width * height * hours * 6
             assert (tmp_path / f"{tx}-{ty}.bin").stat().st_size == expected
 
 

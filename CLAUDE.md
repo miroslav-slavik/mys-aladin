@@ -8,8 +8,8 @@ autentizace, žádný trvale běžící server.
 
 ## Rozhodnutí uživatele
 
-- **Sledované parametry:** teplota 2 m, úhrn srážek, celková oblačnost,
-  rychlost a směr větru
+- **Sledované parametry:** teplota 2 m, úhrn srážek, z toho sněhové srážky,
+  celková oblačnost, rychlost a směr větru
 - **Místa (název, lat, lon):** jedno místo na soubor v adresáři `places/`,
   formát popisuje `docs/pipeline.md`.
   - `Home`, `50.110113`, `14.558445` — Lipnická 1450, Kyje, 198 00 Praha 9;
@@ -24,8 +24,8 @@ autentizace, žádný trvale běžící server.
 - **Místo zadané v aplikaci:** kromě vyjmenovaných míst umí aplikace ukázat
   předpověď pro libovolný bod v doméně modelu, zadaný polohou telefonu,
   hledáním obce nebo souřadnicemi. Data pro něj nese plošný balík: mřížka
-  prořídlá na 2 km, veličiny teplota, srážky a oblačnost, bez větru. Vítr
-  a plné rozlišení 1 km zůstávají výsadou vyjmenovaných míst.
+  prořídlá na 2 km, veličiny teplota, srážky, sníh a oblačnost, bez větru.
+  Vítr a plné rozlišení 1 km zůstávají výsadou vyjmenovaných míst.
 - **Hosting:** GitHub Actions (cron) + GitHub Pages
 
 ## Zdroj dat
@@ -104,6 +104,7 @@ Návrh k upřesnění ve Fázi 2 podle skutečných jednotek zjištěných ve F�
           "time": "2026-08-21T07:00Z",
           "t2m": 21.4,
           "precip_mm": 0.0,
+          "snow_mm": 0.0,
           "cloud_pct": 45,
           "wind_ms": 3.2,
           "wind_dir": 270
@@ -119,7 +120,8 @@ Návrh k upřesnění ve Fázi 2 podle skutečných jednotek zjištěných ve F�
 Druhý výstup pipeline vedle `data/forecast.json`. Nese prořídlou mřížku pro
 místa zadaná v aplikaci a do gitu nepatří, protože má 13 MB na běh: zapisuje se
 do `build/area` a na Pages se dostane přes cache Actions. Formát dlaždic i
-`index.json` popisuje `docs/pipeline.md`.
+`index.json` popisuje `docs/pipeline.md`. Se sněhem má šest bajtů na bod
+a hodinu, tedy asi 15,7 MB na běh.
 
 ## Fáze práce
 

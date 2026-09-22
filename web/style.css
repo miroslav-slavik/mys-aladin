@@ -16,6 +16,7 @@
      that the two blues are never taken for one another. */
   --cold: #8ec5f2;
   --cold-line: #b9dcfa;
+  --snow: #ffffff;
   --rain: #3987e5;
   --wind: #199e70;
   --cloud: #8f8e86;
@@ -491,6 +492,7 @@ main { padding: 0 8px; }
 .tip { pointer-events: none; }
 
 .rain-bar { fill: var(--rain); }
+.snow-bar { fill: var(--snow); }
 
 /* The temperature is painted through a gradient whose two colours meet on the
    freezing line, so a curve that crosses it changes colour exactly there. The
