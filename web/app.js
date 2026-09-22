@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v35";
+const APP_VERSION = "v36";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -1324,8 +1324,27 @@ function showBuild() {
   worker.postMessage("version", [channel.port2]);
 }
 
+/* What the page was given to draw on and what of it the eye sees. The two
+   part company when the browser is zoomed in, by a pinch or by a setting of
+   its own, and that is the one cause of a screen too narrow for the layout
+   that the layout itself cannot answer for. */
+function showViewport() {
+  const view = window.visualViewport;
+  const page = document.documentElement.clientWidth;
+  const seen = view ? Math.round(view.width) : page;
+  const scale = view ? view.scale : 1;
+  document.getElementById("viewline").textContent =
+    `Zobrazení: stránka ${page} px, vidět ${seen} px, zvětšení ${decimal(scale, 2)}×`;
+}
+
 window.addEventListener("load", watchForUpdates);
 window.addEventListener("load", showBuild);
+window.addEventListener("load", showViewport);
+window.addEventListener("resize", showViewport);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", showViewport);
+  window.visualViewport.addEventListener("scroll", showViewport);
+}
 
 load();
 
