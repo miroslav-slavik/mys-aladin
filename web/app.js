@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v46";
+const APP_VERSION = "v47";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -385,19 +385,19 @@ function precipitationKind(row) {
 }
 
 /* The stripes for an hour of rain and snow together: a tile of two bands laid
-   at forty-five degrees, each about three pixels across. The tile is in user
-   space, so the stripes run on unbroken from column to column rather than
-   starting afresh in each. */
+   at forty-five degrees, three pixels of rain to two of snow. The tile is in
+   user space, so the stripes run on unbroken from column to column rather
+   than starting afresh in each. */
 function defineSleet(svg) {
   const pattern = el("pattern", {
     id: "sleet",
-    width: 6,
-    height: 6,
+    width: 5,
+    height: 5,
     patternUnits: "userSpaceOnUse",
     patternTransform: "rotate(45)",
   }, el("defs", {}, svg));
-  el("rect", { class: "sleet-rain", width: 6, height: 6 }, pattern);
-  el("rect", { class: "sleet-snow", width: 3, height: 6 }, pattern);
+  el("rect", { class: "sleet-rain", width: 5, height: 5 }, pattern);
+  el("rect", { class: "sleet-snow", width: 2, height: 5 }, pattern);
 }
 
 /* Precipitation keeps its own labelled scale on the right: sharing the
@@ -416,12 +416,17 @@ function drawRain(svg, series, x, base, right) {
     if (row.precip_mm <= 0) return;
     const h = Math.max(scale(row.precip_mm), 1.5);
     const rx = Math.min(1.5, barW / 2);
+    const kind = precipitationKind(row);
+    // The striped column is framed in white, and the frame is drawn inside
+    // the column: a stroke sits astride its path, so the rectangle gives up
+    // half its width to it on every side and the column keeps its footprint.
+    const inset = kind === "sleet-bar" ? 0.5 : 0;
     el("rect", {
-      class: precipitationKind(row),
-      x: x(i) - barW / 2,
-      y: base - h,
-      width: barW,
-      height: h,
+      class: kind,
+      x: x(i) - barW / 2 + inset,
+      y: base - h + inset,
+      width: Math.max(barW - 2 * inset, 0.5),
+      height: Math.max(h - 2 * inset, 0.5),
       rx,
     }, svg);
   });

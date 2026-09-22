@@ -496,8 +496,10 @@ main { padding: 0 8px; }
 
 /* An hour of both is striped in the two colours rather than divided in two:
    a column three or four pixels wide has no room for a line across it, while
-   the stripes read as a mixture at any height. */
-.sleet-bar { fill: url(#sleet); }
+   the stripes read as a mixture at any height. A thin white frame around it
+   tells the mixture from the plain rain beside it even where the column is
+   too short for a stripe to show. */
+.sleet-bar { fill: url(#sleet); stroke: var(--snow); stroke-width: 1; }
 .sleet-rain { fill: var(--rain); }
 .sleet-snow { fill: var(--snow); }
 

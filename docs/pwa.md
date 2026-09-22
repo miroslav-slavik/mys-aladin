@@ -83,7 +83,10 @@ studená je stejně zjevně průsvitná jako teplá.
 Sloupec srážek je celý modrý, celý bílý, nebo pruhovaný. Rozhoduje podíl pole
 `snow_mm` na hodinovém úhrnu: od devíti desetin výš je hodina sněhová, do
 jedné desetiny dešťová a mezi tím jde o déšť se sněhem, který se kreslí
-šikmými pruhy obou barev po třech pixelech. Desetina na každé straně patří té
+šikmými pruhy obou barev, tři pixely deště na dva sněhu, a obtáhne se tenkým
+bílým rámečkem. Rámeček je vedený dovnitř sloupce: obrys leží obkročmo na
+hraně, takže obdélník ustoupí o polovinu jeho šíře na každé straně a sloupec
+si udrží svou šířku. Desetina na každé straně patří té
 větší z obou srážek, protože stopu sněhu v hodině deště nemá smysl pruhovat
 a model ji hlásí často. Pruhy jsou výplň `pattern` v uživatelském prostoru,
 takže navazují ze sloupce do sloupce a nezačínají v každém znovu; dělící čára
