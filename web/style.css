@@ -494,13 +494,20 @@ main { padding: 0 8px; }
 .rain-bar { fill: var(--rain); }
 .snow-bar { fill: var(--snow); }
 
+/* An hour of both is striped in the two colours rather than divided in two:
+   a column three or four pixels wide has no room for a line across it, while
+   the stripes read as a mixture at any height. */
+.sleet-bar { fill: url(#sleet); }
+.sleet-rain { fill: var(--rain); }
+.sleet-snow { fill: var(--snow); }
+
 /* The temperature is painted through a gradient whose two colours meet on the
    freezing line, so a curve that crosses it changes colour exactly there. The
-   filled part carries its own transparency here rather than on the path,
-   because the cold half is given more of it: a pale blue laid on at the
-   weight of the warm half would sink into the plane of the page. */
+   filled part carries its transparency here rather than on the path, because
+   a gradient has to bring its own. Both halves are laid on at the same
+   weight, so the cold one is as evidently a translucent fill as the warm. */
 .warm-fill { stop-color: var(--temp); stop-opacity: 0.55; }
-.cold-fill { stop-color: var(--cold); stop-opacity: 0.8; }
+.cold-fill { stop-color: var(--cold); stop-opacity: 0.55; }
 .warm-line { stop-color: var(--temp-line); }
 .cold-line { stop-color: var(--cold-line); }
 .wind-arrow { stroke: var(--ink-2); stroke-width: 1.1; fill: none; }

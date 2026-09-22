@@ -77,12 +77,19 @@ prvního kroku, aby bylo hned zřejmé, odkud předpověď vychází.
 `--cold` a `--cold-line`, bledě modrou, která je světlejší než sloupce srážek,
 takže se obě modři nepletou. Přechod obstarají dvě lineární výplně přes celou
 výšku grafu, jejichž obě zarážky leží na výšce nuly, takže se barva mění přesně
-na nule, ať křivka projde kudykoli. Studená polovina plochy je krytější než
-teplá, protože bledá modrá při krytí teplé poloviny na tmavém podkladu zaniká.
-Sníh, tedy část hodinového úhrnu spadlá jako sníh, se kreslí bíle od země
-vzhůru přes modrý sloupec, takže hodina samého sněhu je bílá celá a hodina
-smíšených srážek ukáže hranici mezi nimi. Data zapsaná dřív, než pipeline sníh
-četla, pole `snow_mm` nemají a sloupec pak vypadá jako dřív.
+na nule, ať křivka projde kudykoli. Obě poloviny plochy mají stejné krytí, takže
+studená je stejně zjevně průsvitná jako teplá.
+
+Sloupec srážek je celý modrý, celý bílý, nebo pruhovaný. Rozhoduje podíl pole
+`snow_mm` na hodinovém úhrnu: od devíti desetin výš je hodina sněhová, do
+jedné desetiny dešťová a mezi tím jde o déšť se sněhem, který se kreslí
+šikmými pruhy obou barev po třech pixelech. Desetina na každé straně patří té
+větší z obou srážek, protože stopu sněhu v hodině deště nemá smysl pruhovat
+a model ji hlásí často. Pruhy jsou výplň `pattern` v uživatelském prostoru,
+takže navazují ze sloupce do sloupce a nezačínají v každém znovu; dělící čára
+napříč sloupcem širokým tři až čtyři pixely by se nedala přečíst. Data zapsaná
+dřív, než pipeline sníh četla, pole `snow_mm` nemají a všechny sloupce jsou
+pak dešťové.
 
 **Směr větru nesou šipky, ne druhá osa.** Úhel na lineární ose nedává smysl,
 protože 359° a 1° by ležely na opačných koncích. Šipka letí po větru, tedy pryč

@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v45";
+const APP_VERSION = "v46";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -373,6 +373,33 @@ function drawDayBands(svg, series, x, base) {
   }
 }
 
+/* Which of the three the hour is. A tenth either way is left to the greater
+   of the two: a trace of snow in an hour of rain is not worth striping the
+   column for, and the model reports such traces often. Data written before
+   the model's snow was read carry none, and every column is then rain. */
+function precipitationKind(row) {
+  const share = Math.min(row.snow_mm || 0, row.precip_mm) / row.precip_mm;
+  if (share >= 0.9) return "snow-bar";
+  if (share <= 0.1) return "rain-bar";
+  return "sleet-bar";
+}
+
+/* The stripes for an hour of rain and snow together: a tile of two bands laid
+   at forty-five degrees, each about three pixels across. The tile is in user
+   space, so the stripes run on unbroken from column to column rather than
+   starting afresh in each. */
+function defineSleet(svg) {
+  const pattern = el("pattern", {
+    id: "sleet",
+    width: 6,
+    height: 6,
+    patternUnits: "userSpaceOnUse",
+    patternTransform: "rotate(45)",
+  }, el("defs", {}, svg));
+  el("rect", { class: "sleet-rain", width: 6, height: 6 }, pattern);
+  el("rect", { class: "sleet-snow", width: 3, height: 6 }, pattern);
+}
+
 /* Precipitation keeps its own labelled scale on the right: sharing the
    temperature scale would make the columns unreadable as millimetres. */
 function drawRain(svg, series, x, base, right) {
@@ -384,20 +411,19 @@ function drawRain(svg, series, x, base, right) {
   const spacing = (x(1) - x(0)) || 4;
   const barW = Math.max(1.5, spacing * 0.62);
 
+  defineSleet(svg);
   series.forEach((row, i) => {
     if (row.precip_mm <= 0) return;
     const h = Math.max(scale(row.precip_mm), 1.5);
     const rx = Math.min(1.5, barW / 2);
-    el("rect", { class: "rain-bar", x: x(i) - barW / 2, y: base - h, width: barW, height: h, rx }, svg);
-    // Snow is the part of the hour's total that falls as snow, drawn white
-    // over the column from the ground up: an hour of snow alone turns the
-    // whole column white, an hour of both shows where the line between them
-    // is. Data written before the model's snow was read carry none, and the
-    // column then stays as it was.
-    const snow = Math.min(row.snow_mm || 0, row.precip_mm);
-    if (snow <= 0) return;
-    const sh = Math.min(h, Math.max(scale(snow), 1.5));
-    el("rect", { class: "snow-bar", x: x(i) - barW / 2, y: base - sh, width: barW, height: sh, rx }, svg);
+    el("rect", {
+      class: precipitationKind(row),
+      x: x(i) - barW / 2,
+      y: base - h,
+      width: barW,
+      height: h,
+      rx,
+    }, svg);
   });
 
 }
