@@ -178,8 +178,16 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 
 /* Both icons take a column as wide as the thermometer, so the temperature and
    the precipitation below it begin at the same x. The shower is drawn smaller
-   and its own aspect ratio centres it in that column. */
-.now-main .param-icon { width: 30px; }
+   and its own aspect ratio centres it in that column.
+
+   The sizes are a twentieth larger than the width and height attributes the
+   markup carries, so both dimensions have to be named here: with only the
+   width given, the aspect ratio would scale the drawing back to the height
+   from the attribute. Neither icon is taller than the line of text beside it,
+   so the section keeps its height and the padding stays as it was. */
+.now-main .param-icon { width: 31.5px; }
+.now-temp .param-icon { height: 31.5px; }
+.now-rain .param-icon { height: 21px; }
 
 .now-side { margin: 0; display: grid; gap: 6px; }
 .now-side div { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
