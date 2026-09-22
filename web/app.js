@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v34";
+const APP_VERSION = "v35";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -607,22 +607,31 @@ function ghost(character) {
 function showTemperature(value) {
   const text = value.toFixed(1);
   const node = document.getElementById("nowTemp");
-  const negative = text.startsWith("-");
+  fill(node, `${text} °C`, 2);
+  if (!text.startsWith("-")) node.prepend(ghost("-"));
+}
+
+/* Every reading of the header is written this way. The whole part is given as
+   many places as the largest value needs and fills the places it does not use
+   with digits that are not seen, so the unit behind the number never moves. */
+function fill(node, text, places) {
+  const whole = text.split(" ")[0].replace("-", "").split(".")[0];
   node.textContent = "";
-  if (!negative) node.append(ghost("-"));
-  if (text.indexOf(".") - (negative ? 1 : 0) < 2) node.append(ghost("0"));
-  node.append(`${text} °C`);
+  for (let i = whole.length; i < places; i += 1) node.append(ghost("0"));
+  node.append(text);
 }
 
 function showHeader(row) {
   showTemperature(row.t2m);
   const rain = document.getElementById("nowRain");
-  rain.textContent = "";
-  rain.append(ghost("-"), `${row.precip_mm.toFixed(1)} mm/h`);
+  fill(rain, `${row.precip_mm.toFixed(1)} mm/h`, 1);
+  // The same room the temperature keeps for its sign, so that the two
+  // readings of the left half begin on one line.
+  rain.prepend(ghost("-"));
   if (state.hasWind) {
-    document.getElementById("nowWind").textContent = `${row.wind_ms.toFixed(1)} m/s`;
+    fill(document.getElementById("nowWind"), `${row.wind_ms.toFixed(1)} m/s`, 3);
   }
-  document.getElementById("nowCloud").textContent = `${row.cloud_pct} %`;
+  fill(document.getElementById("nowCloud"), `${row.cloud_pct} %`, 3);
   const today = new Date().getDate() === row.date.getDate();
   document.getElementById("when").textContent =
     `${today ? "Dnes" : DAYS[row.date.getDay()]} ${hhmm(row.date)}`;

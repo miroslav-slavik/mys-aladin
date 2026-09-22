@@ -136,15 +136,21 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   border-top: 1px dashed var(--axis);
   border-bottom: 1px dashed var(--axis);
   background: var(--surface);
+
+  /* The two sizes of the block, named once. The room kept in front of the
+     precipitation is measured in the size of the temperature, so both sizes
+     have to be reachable from either half. They follow the width of the
+     screen as well, so that the line fits a narrow phone, or a wide one held
+     at one of the larger text sizes the browser offers, without either half
+     being cut off. */
+  --reading: clamp(26px, 10.3vw, 40px);
+  --minor: clamp(14px, 4.4vw, 17px);
 }
 
 /* The reading is aligned to the left edge of the page, starting on the same
    vertical line as the place name in the header, so the whole top of the
    screen shares one left edge. The padding of the section is that space. */
-/* The size of the temperature, named once: the room kept in front of the
-   precipitation is measured in it as well, so the two readings begin on the
-   same vertical line. */
-.now-main { text-align: left; --reading: 40px; }
+.now-main { text-align: left; }
 
 .now-temp {
   display: flex;
@@ -159,11 +165,11 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   white-space: nowrap;
 }
 
-/* The icon costs width the number used to have. On the narrowest phones the
-   reading would break across two lines, so give it a smaller size there. */
+/* The narrowest phones give the block a little more of their width and keep
+   a little less between the icon and the reading. The sizes themselves follow
+   the width on their own. */
 @media (max-width: 360px) {
   .now { padding: 10px 12px 14px 8px; }
-  .now-main { --reading: 34px; }
   /* Named through the parent so that it also beats the gap of .now-rain,
      which the stylesheet sets below this block. */
   .now-main p { gap: 8px; }
@@ -196,7 +202,7 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   justify-content: flex-start;
   gap: 10px;
   margin: 6px 0 0;
-  font-size: 17px;
+  font-size: var(--minor);
   color: var(--muted);
 }
 
@@ -214,10 +220,14 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .now-temp .param-icon { height: 34.65px; }
 .now-rain .param-icon { height: 23.1px; }
 
+/* The right half is built like the left one: the icons stand in a column and
+   the readings begin on one line beside them. The block as a whole stays at
+   the right edge, where the auto column of the section holds it. */
 .now-side { margin: 0; display: grid; gap: 6px; }
-.now-side div { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.now-side div { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
+.now-side .param-icon { width: 26px; }
 .now-side dt { display: flex; }
-.now-side dd { margin: 0; font-size: 17px; }
+.now-side dd { margin: 0; font-size: var(--minor); }
 
 /* Each quantity is named by an icon rather than a word, the way the reference
    meteogram does it: a thermometer, a shower, a turbine and a cloud. They are
