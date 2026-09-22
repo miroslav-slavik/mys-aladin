@@ -15,6 +15,10 @@ autentizace, žádný trvale běžící server.
   - `Home`, `50.110113`, `14.558445` — Lipnická 1450, Kyje, 198 00 Praha 9;
     souřadnice z RÚIAN (kód adresního místa 25225472), WGS-84. Nejbližší bod
     mřížky CZ_1km leží 272 m daleko na 50,1110 N a 14,5620 E.
+  - `Černý Most` a `Nusle`, části Prahy, a obec `Liběchov` na Mělnicku.
+    Souřadnice jsou středy z databáze Geonames ČÚZK, stejné jako v seznamu
+    míst zabudovaném do aplikace. Nejbližší body mřížky leží 578 m, 438 m
+    a 104 m daleko.
   - Další místa lze přidat později založením souboru v `places/`; aplikace to
     umí nabídnout pro právě zobrazený bod.
 - **Místo zadané v aplikaci:** kromě vyjmenovaných míst umí aplikace ukázat
