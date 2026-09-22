@@ -166,16 +166,11 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   .now-main p { gap: 8px; }
 }
 
-/* Two digits wide and right-aligned, so that the point after it sits on the
-   same vertical line whether the temperature has one whole digit or two. The
-   figures are tabular, so one ch is exactly one digit. A single digit leaves
-   the room of the other one empty, a minus sign fits in it, and only below
-   minus ten degrees does the reading move by one digit. */
-.now-temp .whole {
-  display: inline-block;
-  min-width: 2ch;
-  text-align: right;
-}
+/* The room kept for a character that is not on screen. Hidden this way it is
+   also out of the reach of screen readers, which is why it is measured in the
+   same text as the reading rather than drawn as a fixed width: it then fits
+   any font and any size the stylesheet gives the reading. */
+.ghost { visibility: hidden; }
 
 .now-rain {
   display: flex;
