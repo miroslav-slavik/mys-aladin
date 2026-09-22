@@ -291,8 +291,11 @@ Po změně souborů v `web/` je potřeba zvýšit `CACHE` v `web/sw.js` **a zár
 nemohou rozejít.
 
 Poslední řádky patičky uvádějí verzi aplikace, která je zapsaná v právě
-běžícím `app.js`, a za ní běh workflow, který zobrazená data zapsal, třeba
-`forecast #271`. Číslo běhu odkazuje na jeho stránku v Actions. Údaj nese pole
+běžícím `app.js`, název cache, na který odpoví service worker, a běh workflow,
+který zobrazená data zapsal, třeba `forecast #271`. Když se verze a cache
+rozcházejí, je na obrazovce stará verze a nová už čeká nainstalovaná; po
+zavření a otevření aplikace se srovnají. Když stránku žádný worker neřídí,
+třeba při prvním otevření, řádek to říká místo názvu cache. Číslo běhu odkazuje na jeho stránku v Actions. Údaj nese pole
 `workflow_run` v `data/forecast.json`, které pipeline zapíše z proměnných
 prostředí `GITHUB_WORKFLOW`, `GITHUB_RUN_NUMBER` a `GITHUB_RUN_ID`; u souboru
 vyrobeného mimo Actions pole chybí a řádek to řekne. Poslední řádek patičky
