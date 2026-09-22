@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v38";
+const APP_VERSION = "v39";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -760,6 +760,26 @@ function promote(place) {
   return listed || place;
 }
 
+/* At home the app should say so. A position within a kilometre of a saved
+   place is taken for that place: it is the same kilometre of the grid, and
+   the place carries the name the user gave it, the full resolution and the
+   wind, none of which a point of its own would have. A kilometre is the step
+   of the grid, so nothing finer than that is being claimed. */
+const AT_PLACE_KM = 1;
+
+function placeAt(lat, lon) {
+  let best = null;
+  let closest = AT_PLACE_KM;
+  for (const listed of listedPlaces()) {
+    const km = AreaPack.distanceKm(lat, lon, listed.lat, listed.lon);
+    if (km <= closest) {
+      best = listed;
+      closest = km;
+    }
+  }
+  return best;
+}
+
 function samePlace(one, other) {
   if (!one || !other || one.kind !== other.kind) return false;
   if (one.kind === "listed") return one.name === other.name;
@@ -1208,9 +1228,9 @@ function locate() {
   });
 }
 
-/* Read the position and show it. The place list is loaded on the way, because
-   a point deserves the name of the quarter it is in rather than its
-   coordinates. A position that cannot be had leaves the screen as it is: the
+/* Read the position and show it. A saved place within a kilometre wins; short
+   of that the place list is loaded, because a point deserves the name of the
+   quarter it is in rather than its coordinates. A position that cannot be had leaves the screen as it is: the
    mode stays on, so the next opening tries again. */
 async function followNow(announce = false) {
   if (announce) note("Zjišťuji polohu…");
@@ -1218,13 +1238,16 @@ async function followNow(announce = false) {
     const coords = await locate();
     await placeNames().catch(() => {});
     setFollowing(true);
-    await showPlace({
-      kind: "point",
-      auto: true,
-      label: nameFor(coords.latitude, coords.longitude),
-      lat: Number(coords.latitude.toFixed(4)),
-      lon: Number(coords.longitude.toFixed(4)),
-    });
+    const lat = Number(coords.latitude.toFixed(4));
+    const lon = Number(coords.longitude.toFixed(4));
+    const here = placeAt(lat, lon);
+    // Either way the place is marked as read from the phone, so that the mode
+    // stays on and the list of the lately shown places is left alone.
+    await showPlace(
+      here
+        ? { ...here, auto: true }
+        : { kind: "point", auto: true, label: nameFor(lat, lon), lat, lon }
+    );
     report("");
     if (announce) closePanel();
   } catch (error) {

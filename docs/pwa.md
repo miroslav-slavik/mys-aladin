@@ -118,6 +118,12 @@ jak se dostat k předpovědi pro místo, které pipeline nezná:
   po odepření polohy svítilo při každém startu. Sledovaná poloha se nezapisuje
   mezi poslední místa, jinak by se seznam zaplnil skoro stejnými body.
 
+  Leží-li uložené místo blíž než kilometr, ukáže se rovnou ono, včetně kroužku
+  u názvu. Doma tedy aplikace píše Kyje, Praha 9 a nikoli nejbližší část obce
+  ze seznamu ČÚZK, a nádavkem dá plné rozlišení a vítr. Kilometr je krok
+  mřížky, takže se tím netvrdí nic jemnějšího, než co model rozliší. Rozhoduje
+  o tom funkce `placeAt` a konstanta `AT_PLACE_KM`.
+
   Kroužek vedle názvu v hlavičce říká, že zobrazené místo přišlo z telefonu.
   Není to totéž co zapnutý režim: režim může být zapnutý a čtení selhat.
 

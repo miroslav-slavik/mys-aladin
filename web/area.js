@@ -154,5 +154,5 @@ const AreaPack = (() => {
     return Boolean(nearest(await index(), lat, lon));
   }
 
-  return { index, seriesAt, covers, MissingPack, OffGrid };
+  return { index, seriesAt, covers, distanceKm, MissingPack, OffGrid };
 })();
