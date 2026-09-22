@@ -3,7 +3,7 @@
    forecast stays in the cache as the offline fallback. */
 "use strict";
 
-const CACHE = "mys-aladin-v40";
+const CACHE = "mys-aladin-v41";
 const FORECAST = "data/forecast.json";
 
 /* Tiles of the area pack live in their own cache, so that a few places looked
@@ -103,13 +103,6 @@ async function trim(cache) {
     await cache.delete(key);
   }
 }
-
-/* The page shows which cache is serving it, so a version that refuses to go
-   away can be recognised rather than guessed at. */
-self.addEventListener("message", (event) => {
-  if (event.data !== "version" || !event.ports.length) return;
-  event.ports[0].postMessage({ cache: CACHE, tiles: TILES });
-});
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;

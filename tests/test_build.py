@@ -110,6 +110,28 @@ def test_label_falls_back_to_the_name():
     assert forecast["locations"][0]["label"] == "Chata"
 
 
+def test_workflow_run_is_recorded_when_actions_gives_one(monkeypatch):
+    monkeypatch.setenv("GITHUB_WORKFLOW", "forecast")
+    monkeypatch.setenv("GITHUB_RUN_NUMBER", "271")
+    monkeypatch.setenv("GITHUB_RUN_ID", "35766372795")
+
+    forecast = build_forecast("2026-08-21T06:00Z", {HOME: by_field()})
+
+    assert forecast["workflow_run"] == {
+        "workflow": "forecast",
+        "number": 271,
+        "id": "35766372795",
+    }
+
+
+def test_workflow_run_is_left_out_away_from_actions(monkeypatch):
+    monkeypatch.delenv("GITHUB_RUN_NUMBER", raising=False)
+
+    forecast = build_forecast("2026-08-21T06:00Z", {HOME: by_field()})
+
+    assert "workflow_run" not in forecast
+
+
 def test_written_file_round_trips(tmp_path):
     path = tmp_path / "data" / "forecast.json"
     forecast = build_forecast("2026-08-21T06:00Z", {HOME: by_field()})

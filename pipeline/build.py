@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -39,26 +40,48 @@ def build_series(by_field: dict[str, pd.Series]) -> list[dict]:
     return rows
 
 
+def workflow_run() -> dict | None:
+    """The run of the GitHub Actions workflow writing this file, if any.
+
+    Read from the environment Actions provides, so a run started by hand has
+    no such field and the app says as much. The number is what the run is
+    called in the web interface, the id is what its address is built from.
+    """
+    number = os.environ.get("GITHUB_RUN_NUMBER")
+    if not number:
+        return None
+    return {
+        "workflow": os.environ.get("GITHUB_WORKFLOW") or "forecast",
+        "number": int(number) if number.isdigit() else number,
+        "id": os.environ.get("GITHUB_RUN_ID", ""),
+    }
+
+
 def build_forecast(
     run_id: str,
     series_by_location: dict[Location, dict[str, pd.Series]],
     generated_at: datetime | None = None,
+    workflow: dict | None = None,
 ) -> dict:
     moment = generated_at or datetime.now(timezone.utc)
-    return {
+    run = workflow if workflow is not None else workflow_run()
+    document: dict = {
         "run_id": run_id,
         "generated_at": moment.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "locations": [
-            {
-                "name": location.name,
-                "label": location.label or location.name,
-                "lat": location.lat,
-                "lon": location.lon,
-                "series": build_series(by_field),
-            }
-            for location, by_field in series_by_location.items()
-        ],
     }
+    if run:
+        document["workflow_run"] = run
+    document["locations"] = [
+        {
+            "name": location.name,
+            "label": location.label or location.name,
+            "lat": location.lat,
+            "lon": location.lon,
+            "series": build_series(by_field),
+        }
+        for location, by_field in series_by_location.items()
+    ]
+    return document
 
 
 def read_run_id(path: Path) -> str | None:

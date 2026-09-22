@@ -290,11 +290,13 @@ Po změně souborů v `web/` je potřeba zvýšit `CACHE` v `web/sw.js` **a zár
 `APP_VERSION` v `web/app.js`**. Obě čísla hlídá `tests/test_web.py`, takže se
 nemohou rozejít.
 
-Poslední řádek patičky uvádí obojí: verzi aplikace, která je zapsaná v právě
-běžícím `app.js`, a název cache, na který odpoví service worker. Když se
-rozcházejí, je na obrazovce stará verze a nová už čeká nainstalovaná; po
-zavření a otevření aplikace se srovnají. Když stránku žádný worker neřídí,
-třeba při prvním otevření, řádek to říká místo názvu cache.
+Poslední řádky patičky uvádějí verzi aplikace, která je zapsaná v právě
+běžícím `app.js`, a za ní běh workflow, který zobrazená data zapsal, třeba
+`forecast #271`. Číslo běhu odkazuje na jeho stránku v Actions. Údaj nese pole
+`workflow_run` v `data/forecast.json`, které pipeline zapíše z proměnných
+prostředí `GITHUB_WORKFLOW`, `GITHUB_RUN_NUMBER` a `GITHUB_RUN_ID`; u souboru
+vyrobeného mimo Actions pole chybí a řádek to řekne. Poslední řádek patičky
+pak uvádí šířku stránky, kolik z ní je vidět, a zvětšení prohlížeče.
 
 **Nová verze se ukáže po jednom otevření.** Skořápka jde z cache, takže se nové
 soubory dostanou na obrazovku, až převezme řízení nový service worker. Sám od

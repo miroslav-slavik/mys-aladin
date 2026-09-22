@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v40";
+const APP_VERSION = "v41";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -724,6 +724,7 @@ function render(forecast, fromCache) {
 
   document.getElementById("runline").textContent =
     `Běh modelu ${formatMoment(forecast.run_id)}, aktualizováno ${formatMoment(forecast.generated_at)}`;
+  showWorkflowRun(forecast);
   updateAge();
 
   // Something is on screen at once, even while the position is being read,
@@ -1329,27 +1330,32 @@ function watchForUpdates() {
   }).catch(() => {});
 }
 
-/* Which version is on screen, and which cache it came out of. The two differ
-   exactly when a new version has installed but the page still runs the old
-   one, which is the moment worth being able to see. */
-function showBuild() {
-  document.getElementById("appVersion").textContent = APP_VERSION;
-  const name = document.getElementById("cacheName");
-  const worker = navigator.serviceWorker && navigator.serviceWorker.controller;
-  if (!worker) {
-    name.textContent = "bez service workeru";
+/* Which run of the workflow wrote the data on screen, as a link to it. The
+   field is missing from a forecast built anywhere but in Actions, and from
+   one written before this was recorded at all. */
+function showWorkflowRun(forecast) {
+  const node = document.getElementById("buildRun");
+  const run = forecast.workflow_run;
+  node.textContent = "";
+  if (!run) {
+    node.textContent = "běh workflow neuveden";
     return;
   }
-  const channel = new MessageChannel();
-  const answered = setTimeout(() => {
-    // An older worker knows no such message; saying so beats an empty dash.
-    name.textContent = "starší verze";
-  }, 1000);
-  channel.port1.onmessage = (event) => {
-    clearTimeout(answered);
-    name.textContent = (event.data && event.data.cache) || "—";
-  };
-  worker.postMessage("version", [channel.port2]);
+  const name = `${run.workflow || "forecast"} #${run.number}`;
+  if (!run.id) {
+    node.textContent = name;
+    return;
+  }
+  const link = document.createElement("a");
+  link.href = `${REPO}/actions/runs/${run.id}`;
+  link.rel = "noreferrer";
+  link.textContent = name;
+  node.append(link);
+}
+
+/* Which version of the app is on screen. */
+function showBuild() {
+  document.getElementById("appVersion").textContent = APP_VERSION;
 }
 
 /* What the page was given to draw on and what of it the eye sees. The two

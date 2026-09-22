@@ -51,6 +51,13 @@ desetinné číslo, oblačnost a směr větru celé. Bez toho by teplota rovnýc
 **Atomický zápis.** Výstup se zapisuje do dočasného souboru a teprve pak
 přesune na místo. Přerušený běh tak nezanechá poškozený JSON.
 
+**Stopa po běhu workflow.** Vedle `run_id` a `generated_at` nese
+`data/forecast.json` nepovinné pole `workflow_run` s názvem workflow, číslem
+běhu a jeho identifikátorem, sestavené z proměnných prostředí `GITHUB_WORKFLOW`,
+`GITHUB_RUN_NUMBER` a `GITHUB_RUN_ID`. Mimo GitHub Actions tyto proměnné
+neexistují a pole se nezapíše. Aplikace jej ukazuje v patičce jako odkaz na
+stránku běhu, takže od zobrazených dat vede cesta k záznamu, který je vyrobil.
+
 **Idempotence podle `run_id`.** Pokud už `data/forecast.json` obsahuje
 nejnovější kompletní běh, pipeline se ukončí před stahováním. Opakované
 spuštění tedy nezatěžuje zdroj.
