@@ -132,7 +132,7 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 8px 16px;
-  padding: 10px 16px 14px;
+  padding: 10px 16px 14px 10px;
   border-top: 1px dashed var(--axis);
   border-bottom: 1px dashed var(--axis);
   background: var(--surface);
@@ -141,7 +141,10 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 /* The reading is aligned to the left edge of the page, starting on the same
    vertical line as the place name in the header, so the whole top of the
    screen shares one left edge. The padding of the section is that space. */
-.now-main { text-align: left; }
+/* The size of the temperature, named once: the room kept in front of the
+   precipitation is measured in it as well, so the two readings begin on the
+   same vertical line. */
+.now-main { text-align: left; --reading: 40px; }
 
 .now-temp {
   display: flex;
@@ -149,7 +152,7 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
   justify-content: flex-start;
   gap: 10px;
   margin: 0;
-  font-size: 40px;
+  font-size: var(--reading);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.05;
@@ -159,8 +162,8 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 /* The icon costs width the number used to have. On the narrowest phones the
    reading would break across two lines, so give it a smaller size there. */
 @media (max-width: 360px) {
-  .now { padding: 10px 12px 14px; }
-  .now-temp { font-size: 34px; }
+  .now { padding: 10px 12px 14px 8px; }
+  .now-main { --reading: 34px; }
   /* Named through the parent so that it also beats the gap of .now-rain,
      which the stylesheet sets below this block. */
   .now-main p { gap: 8px; }
@@ -171,6 +174,21 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
    same text as the reading rather than drawn as a fixed width: it then fits
    any font and any size the stylesheet gives the reading. */
 .ghost { visibility: hidden; }
+
+/* The precipitation keeps the room of the minus sign as well, although it
+   never has one, so that it starts where a two-digit temperature does. The
+   room has to be as wide as the sign of the temperature, hence the larger
+   size; a line height of nought keeps the taller character from raising the
+   line it is not seen on.
+
+   The weight and the letter spacing are the temperature's as well, because
+   the room being kept is the room of its sign, not of one in this line. */
+.now-rain .ghost {
+  font-size: var(--reading);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 0;
+}
 
 .now-rain {
   display: flex;
