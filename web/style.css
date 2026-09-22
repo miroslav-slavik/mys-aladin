@@ -235,7 +235,10 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 .now-side div { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
 .now-side .param-icon { width: 26px; }
 .now-side dt { display: flex; }
-.now-side dd { margin: 0; font-size: var(--minor); }
+/* The values are set against the right edge of the block, so that both end on
+   one line whatever unit follows them. The places kept in front of them hold
+   the block at its widest, so the edge itself never moves either. */
+.now-side dd { margin: 0 0 0 auto; font-size: var(--minor); }
 
 /* Each quantity is named by an icon rather than a word, the way the reference
    meteogram does it: a thermometer, a shower, a turbine and a cloud. They are
@@ -250,10 +253,6 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 /* A place read from the area pack has no wind: one class on the body takes it
    off the screen, in the switcher and in the table. The header keeps its row
    and says N/A there, so that the cloud stays on the line of the rain. */
-/* The N/A that stands in for a wind the pack does not carry is set against
-   the right edge, so that it ends where the cloud below it ends. */
-body.no-wind .now-side .wind dd { margin-left: auto; }
-
 body.no-wind .views button[data-view="wind"],
 body.no-wind #dataTable .wind { display: none; }
 
