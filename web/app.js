@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v31";
+const APP_VERSION = "v32";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -590,8 +590,24 @@ function currentRow(series) {
 
 /* The header shows one hour: the current one, or the one under the finger
    while the chart is being touched. */
+/* The decimal point of the temperature keeps its place while the value
+   changes, so the reading does not shift sideways when it crosses ten
+   degrees. The whole part goes into a box of its own, which the stylesheet
+   holds two digits wide and aligns to the right. */
+function showTemperature(value) {
+  const text = value.toFixed(1);
+  const node = document.getElementById("nowTemp");
+  const whole = document.createElement("span");
+  whole.className = "whole";
+  whole.textContent = text.slice(0, -2);
+  const rest = document.createElement("span");
+  rest.textContent = `${text.slice(-2)} °C`;
+  node.textContent = "";
+  node.append(whole, rest);
+}
+
 function showHeader(row) {
-  document.getElementById("nowTemp").textContent = `${row.t2m.toFixed(1)} °C`;
+  showTemperature(row.t2m);
   document.getElementById("nowRain").textContent = `${row.precip_mm.toFixed(1)} mm/h`;
   if (state.hasWind) {
     document.getElementById("nowWind").textContent = `${row.wind_ms.toFixed(1)} m/s`;
