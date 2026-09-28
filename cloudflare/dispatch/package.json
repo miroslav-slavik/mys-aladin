@@ -1,0 +1,9 @@
+{
+  "name": "mys-aladin-dispatch",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "deploy": "wrangler deploy"
+  }
+}

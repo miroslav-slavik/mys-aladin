@@ -232,3 +232,8 @@ tmp/
 
 # OS
 .DS_Store
+
+# Cloudflare Worker tooling
+node_modules/
+.wrangler/
+.dev.vars
