@@ -1,10 +1,10 @@
 {
   "run_id": "2026-10-05T12:00Z",
-  "generated_at": "2026-10-05T19:26:56Z",
+  "generated_at": "2026-10-05T20:03:04Z",
   "workflow_run": {
     "workflow": "forecast",
-    "number": 382,
-    "id": "37363331246"
+    "number": 384,
+    "id": "37367196566"
   },
   "locations": [
     {
