@@ -21,9 +21,12 @@ permissions:
   pages: write
   id-token: write
 
+# A newer deploy always carries the newest site, so it replaces an older one
+# instead of waiting for it. Waiting once let a single run stuck in the queue
+# hold back every deploy for three days (October 2026).
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
