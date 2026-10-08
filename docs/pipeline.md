@@ -183,6 +183,12 @@ neodstraní. Když cache chybí, například hned po zavedení této funkce, web
 nasadí bez balíku a `scripts/build-site.sh` to vypíše. Aplikace pak zvládne jen
 vyjmenovaná místa.
 
+Nasazení `pages` běží vždy jen jedno. Nové nasazení přitom staré zruší
+(`cancel-in-progress: true`), protože nejnovější obsah stejně vyhrává.
+Původně nové nasazení na staré čekalo. V říjnu 2026 tak jeden běh, který
+uvízl ve frontě bez runneru, zdržel od 5. do 8. 10. všechna další nasazení:
+`forecast` dál commitoval nová data, ale na web se nedostala.
+
 Ruční spuštění přes **Actions → forecast → Run workflow** má volitelný přepínač
 `force`. Bez něj se workflow chová stejně jako plánovaný běh. S ním předá
 pipeline `--force`, takže se předpověď přepočítá i pro už zpracovaný běh.
