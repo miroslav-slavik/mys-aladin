@@ -27,7 +27,7 @@ const state = {
   series: [],
   view: "temperature",
   fromCache: false,
-  generatedAt: 0,
+  runAt: 0,
   forecast: null,
   /* The place on screen. A listed one comes from the pipeline at the full
      resolution of the source and carries all five quantities; a point comes
@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v47";
+const APP_VERSION = "v48";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -785,7 +785,15 @@ function formatMoment(iso) {
 
 /* The age of the forecast is always on screen; the badge only marks it as too
    old to trust. Age is the honest signal: navigator.onLine misreports in some
-   environments, and a cached response can reach the page looking fresh. */
+   environments, and a cached response can reach the page looking fresh.
+
+   Age counts from the model run, the moment the forecast describes, not from
+   when the pipeline wrote it. The newest run anyone can have is up to about
+   10.5 hours old: the 06 and 18 runs publish 4.5 hours after their nominal
+   time and the next run comes six hours later. Past STALE_RUN_HOURS a run is
+   overdue, not merely between updates. */
+const STALE_RUN_HOURS = 12;
+
 function formatAge(hours) {
   if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} min`;
   if (hours < 24) return `${Math.round(hours)} h`;
@@ -793,16 +801,16 @@ function formatAge(hours) {
 }
 
 function updateAge() {
-  if (!state.generatedAt) return;
-  const hours = (Date.now() - state.generatedAt) / 3600e3;
+  if (!state.runAt) return;
+  const hours = (Date.now() - state.runAt) / 3600e3;
   document.getElementById("age").textContent = formatAge(hours);
-  document.getElementById("offline").hidden = !(state.fromCache || hours > 6);
+  document.getElementById("offline").hidden = !(state.fromCache || hours > STALE_RUN_HOURS);
 }
 
 function render(forecast, fromCache) {
   state.forecast = forecast;
   state.fromCache = fromCache;
-  state.generatedAt = Date.parse(forecast.generated_at);
+  state.runAt = Date.parse(forecast.run_id);
 
   document.getElementById("runline").textContent =
     `Běh modelu ${formatMoment(forecast.run_id)}, aktualizováno ${formatMoment(forecast.generated_at)}`;

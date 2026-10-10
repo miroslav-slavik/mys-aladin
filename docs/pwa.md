@@ -291,9 +291,18 @@ z nich posledních dvanáct. Oddělená cache brání tomu, aby pár míst prohl
 na cestách vytlačilo skořápku aplikace; dlaždice patří jednomu běhu modelu,
 takže i u nich rozhoduje síť a uložená kopie je až náhradní odpověď.
 
-Patička vždy uvádí stáří předpovědi, počítané z pole `generated_at`, a jednou
-za minutu je přepočítá, aby údaj neustrnul u aplikace nechané otevřené. Když
-stáří přesáhne šest hodin, přibude k němu žlutý odznak.
+Patička vždy uvádí stáří předpovědi a jednou za minutu je přepočítá, aby údaj
+neustrnul u aplikace nechané otevřené. Stáří se počítá od nominálního času běhu
+modelu (`run_id`), tedy od okamžiku, ze kterého předpověď vychází, ne od chvíle,
+kdy ji pipeline zapsala (`generated_at`). Když přesáhne dvanáct hodin, přibude
+k němu žlutý odznak.
+
+Hranice vychází z rozvrhu ČHMÚ. Běhy 06 a 18 vycházejí 4,5 hodiny po
+nominálním čase a další běh přichází o šest hodin později, takže nejnovější
+dostupný běh bývá starý až zhruba 10,5 hodiny. Dvanáct hodin tedy znamená, že
+nový běh opravdu chybí. Původní hranice šest hodin od `generated_at` byla
+přísnější, než dovoluje i bezchybný provoz: mezi zpracováním běhu 12 a 18 leží
+sedm hodin, takže odznak svítil i tehdy, když bylo všechno v pořádku.
 
 Stáří je spolehlivější signál než stav připojení. Hlavička odpovědi řadu případů
 mine, protože požadavek může uspět z cache prohlížeče, aniž by se záložní větev
