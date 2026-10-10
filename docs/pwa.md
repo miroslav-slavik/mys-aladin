@@ -80,6 +80,13 @@ výšku grafu, jejichž obě zarážky leží na výšce nuly, takže se barva m
 na nule, ať křivka projde kudykoli. Obě poloviny plochy mají stejné krytí, takže
 studená je stejně zjevně průsvitná jako teplá.
 
+Osa teploty má dole rezervu dva stupně pod minimem. Když ale křivka v grafu
+nulu vůbec nepodkročí, osa začíná nejníž na nule. Jinak by rezerva přetáhla
+osu pod nulu a pás plochy mezi nulou a spodním okrajem by se obarvil modře,
+jako by hrozil mráz, který předpověď nečeká. Tak se to stalo 11. 10. 2026 při
+minimu 1,2 °C. Leží-li nula na okraji grafu nebo za ním, nese výplň jedinou
+zarážku, celou teplou nebo celou studenou.
+
 Sloupec srážek je celý modrý, celý bílý, nebo pruhovaný. Rozhoduje podíl pole
 `snow_mm` na hodinovém úhrnu: od devíti desetin výš je hodina sněhová, do
 jedné desetiny dešťová a mezi tím jde o déšť se sněhem, který se kreslí

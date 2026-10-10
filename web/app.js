@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v48";
+const APP_VERSION = "v49";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -264,6 +264,10 @@ function drawChart(fullSeries, viewName) {
     lo = Math.min(...values) - view.pad[0];
     hi = Math.max(...values) + view.pad[1];
   }
+  // The padding must not carry a warm chart across nought: everything under
+  // the freezing line is drawn cold, and a strip of it under a curve that
+  // never freezes reads as frost that is not forecast.
+  if (view.freezing && Math.min(...values) >= 0) lo = Math.max(lo, 0);
   const y = (v) => base - ((v - lo) / (hi - lo || 1)) * PLOT_H;
 
   const points = series.map((row, i) => [x(i), y(view.value(row))]);
@@ -300,11 +304,12 @@ function drawChart(fullSeries, viewName) {
 
 /* Two gradients down the plot, one for the filled area and one for the curve,
    each with its warm and its cold stop on the height of nought degrees. A
-   freezing line above the plot leaves the chart all cold, one below it leaves
-   it all warm, which is what clamping the offset to the plot does. */
+   freezing line on or beyond an edge of the plot leaves a single stop, so the
+   chart is plainly all warm or all cold rather than resting on two stops that
+   meet exactly at the edge. */
 function defineFreezing(svg, y) {
   const defs = el("defs", {}, svg);
-  const offset = Math.min(1, Math.max(0, (y(0) - PAD_T) / PLOT_H));
+  const offset = (y(0) - PAD_T) / PLOT_H;
   for (const [id, warm, cold] of [
     ["freezing-fill", "warm-fill", "cold-fill"],
     ["freezing-line", "warm-line", "cold-line"],
@@ -317,8 +322,8 @@ function defineFreezing(svg, y) {
       x2: 0,
       y2: PAD_T + PLOT_H,
     }, defs);
-    el("stop", { offset, class: warm }, gradient);
-    el("stop", { offset, class: cold }, gradient);
+    if (offset > 0) el("stop", { offset: Math.min(offset, 1), class: warm }, gradient);
+    if (offset < 1) el("stop", { offset: Math.max(offset, 0), class: cold }, gradient);
   }
   return { fill: "url(#freezing-fill)", stroke: "url(#freezing-line)" };
 }
