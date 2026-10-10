@@ -1,9 +1,10 @@
 """Entry point: turn the newest complete ALADIN run into the published data.
 
-Two things come out of a run. data/forecast.json carries the listed locations
-at the full resolution of the source and is committed. The area pack carries a
-coarsened grid for points typed into the app; it is far too large to keep in
-the history, so it is written to a build directory the workflow publishes.
+Two things come out of a run. forecast.json carries the listed locations at
+the full resolution of the source and is committed to the data branch, checked
+out in published/. The area pack carries a coarsened grid for points typed
+into the app; it is far too large to keep in the history, so it is written to
+a build directory the workflow publishes.
 
 Idempotent by design. When the newest complete run is the one already written,
 nothing is downloaded and neither output is touched.
@@ -36,7 +37,7 @@ from .source import Run, download, latest_complete_run
 
 LOG = logging.getLogger("pipeline")
 
-DEFAULT_OUTPUT = Path("data/forecast.json")
+DEFAULT_OUTPUT = Path("published/forecast.json")
 DEFAULT_AREA_OUTPUT = Path("build/area")
 
 AREA_FIELD_NAMES = frozenset(spec.field for spec in AREA_FIELDS)

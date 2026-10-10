@@ -25,7 +25,7 @@ do pěti sekund, protože se nestahuje nic.
 | `pipeline/config.py` | Místa včetně zobrazovaného názvu, seznam veličin, hranice mřížky |
 | `pipeline/source.py` | Nalezení nejnovějšího kompletního běhu, stažení a dekomprese |
 | `pipeline/reader.py` | Čtení GRIB, extrakce bodu i celé mřížky, převod jednotek |
-| `pipeline/build.py` | Sestavení a zápis `data/forecast.json` |
+| `pipeline/build.py` | Sestavení a zápis `forecast.json` |
 | `pipeline/area.py` | Kvantizace, dlaždice a index plošného balíku |
 | `pipeline/__main__.py` | Orchestrace a idempotence |
 
@@ -59,7 +59,7 @@ běhu a jeho identifikátorem, sestavené z proměnných prostředí `GITHUB_WOR
 neexistují a pole se nezapíše. Aplikace jej ukazuje v patičce jako odkaz na
 stránku běhu, takže od zobrazených dat vede cesta k záznamu, který je vyrobil.
 
-**Idempotence podle `run_id`.** Pokud už `data/forecast.json` obsahuje
+**Idempotence podle `run_id`.** Pokud už publikovaný `forecast.json` obsahuje
 nejnovější kompletní běh, pipeline se ukončí před stahováním. Opakované
 spuštění tedy nezatěžuje zdroj.
 
@@ -160,12 +160,42 @@ běhů. Běh, který nenajde nová data, balík nepřepisuje, stejně jako nepř
 ## Publikace
 
 Workflow `.github/workflows/forecast.yml` běží šestnáctkrát denně, spustí testy,
-sestaví předpověď a commitne `data/forecast.json` jen tehdy, když se změnil.
+sestaví předpověď a commitne `forecast.json` do větve `data` jen tehdy, když se
+změnil.
 Časy cronu odpovídají naměřenému zpoždění publikace, viz `parametry.md`. Ke
 čtyřem hlavním slotům je přidána záchytná vrstva každé dvě hodiny, protože
 plánované běhy v Actions se v provozu opožďovaly i o hodiny a jeden slot byl
 vynechán. Většina běhů proto skončí bez akce, což je levné: čtení výpisu
 adresářů a nic víc.
+
+### Větev data
+
+Publikovaná předpověď nemá místo v `main`. Leží ve větvi `data`, která nemá
+s `main` společnou historii a drží jen `forecast.json` a krátké `README.md`.
+Dřív se commitovala přímo do `main` a v říjnu 2026 tvořily datové commity tři
+čtvrtiny jeho historie. Každá feature větev pak potřebovala merge jen kvůli
+datům, se kterými se nijak nekřížila.
+
+Obě workflow si větev `data` checkoutnou vedle kódu do adresáře `published/`.
+`forecast` do něj nechá pipeline zapsat (`--output published/forecast.json`)
+a commitne a pushne odtud. `pages` z něj vezme data pro web. Na webu zůstává
+předpověď na adrese `data/forecast.json`, takže aplikace ani spouštěč na
+Cloudflare o změně nevědí.
+
+Pro lokální náhled a lokální běh pipeline stačí stejné rozložení:
+
+```sh
+git fetch origin data
+git worktree add published data
+```
+
+`scripts/build-site.sh` bez tohoto adresáře skončí chybou s touto radou
+a pipeline do něj ve výchozím nastavení zapisuje. Adresář je v `.gitignore`
+větve `main`. Než lokálně spustíš pipeline, aktualizuj worktree (`git -C
+published pull`), jinak pipeline porovná nejnovější běh se starou kopií
+a stáhne ho znovu.
+
+Historie předpovědí do 10. 10. 2026 zůstává v historii `main`.
 
 ### Předání plošného balíku
 

@@ -1,14 +1,13 @@
 name: pages
 
-# Deploys the PWA together with the current forecast. The forecast workflow
-# commits with GITHUB_TOKEN, and such a push does not start another workflow,
-# so this one also listens for that workflow finishing.
+# Deploys the PWA from main together with the current forecast from the data
+# branch. The forecast workflow commits with GITHUB_TOKEN, and such a push does
+# not start another workflow, so this one listens for that workflow finishing.
 on:
   push:
     branches: [main]
     paths:
       - "web/**"
-      - "data/forecast.json"
       - "scripts/build-site.sh"
       - ".github/workflows/pages.yml"
   workflow_run:
@@ -36,6 +35,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Take the current forecast
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: published
 
       - name: Take the newest area pack
         # The pack is not in the repository. Every forecast run that produced

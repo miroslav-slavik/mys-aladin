@@ -3,16 +3,25 @@
 # the area pack under data/area/ when a run has produced one.
 # Used both by the Pages workflow and for local preview, so the layout the
 # browser sees is the same in both places.
+#
+# The forecast comes from the data branch, checked out in published/. For a
+# local preview: git worktree add published data
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${1:-$ROOT/site}"
 AREA="${AREA_DIR:-$ROOT/build/area}"
+FORECAST="${FORECAST:-$ROOT/published/forecast.json}"
+
+if [ ! -f "$FORECAST" ]; then
+  echo "no forecast at $FORECAST; check out the data branch: git worktree add published data" >&2
+  exit 1
+fi
 
 rm -rf "$OUT"
 mkdir -p "$OUT/data"
 cp -R "$ROOT/web/." "$OUT/"
-cp "$ROOT/data/forecast.json" "$OUT/data/forecast.json"
+cp "$FORECAST" "$OUT/data/forecast.json"
 
 # The pack is never committed, so it reaches the deploy through the cache of
 # the forecast workflow. Without it the site still works, only places that
