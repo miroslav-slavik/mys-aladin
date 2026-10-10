@@ -57,45 +57,44 @@ hlídá, že se obě kopie nerozejdou.
 
 ## Nasazení
 
-Potřeba je účet Cloudflare (plán Free) a na GitHubu fine-grained token:
-Settings → Developer settings → Fine-grained tokens, Repository access jen
-`mys-aladin`, Permissions → Actions: Read and write, nic dalšího.
+Worker nasazuje workflow `.github/workflows/dispatcher.yml`. Spustí se samo po
+každé změně v `cloudflare/dispatch/` ve větvi `main` a jde spustit i ručně přes
+**Actions → dispatcher → Run workflow**. Nejdřív spustí testy Workeru. Pak
+najde jmenný prostor KV `mys-aladin-dispatch-state`, nebo ho při prvním běhu
+založí, a jeho `id` doplní do `wrangler.toml` místo
+`REPLACE_WITH_NAMESPACE_ID`. Potom Worker nasadí a předá mu token pro GitHub
+jako secret `GITHUB_TOKEN`.
 
-### Z příkazové řádky
+Přihlašovací údaje leží jen v secrets repozitáře (Settings → Secrets and
+variables → Actions):
 
-Na počítači s Node.js v adresáři `cloudflare/dispatch/`:
+| Secret | Obsah |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Account API token Cloudflare s oprávněními Workers Scripts Write, Workers KV Storage Write a Account Settings Read, nic víc |
+| `CLOUDFLARE_ACCOUNT_ID` | Identifikátor účtu, hexadecimální řetězec v adrese dashboardu (`dash.cloudflare.com/<id>/…`) |
+| `DISPATCH_GITHUB_TOKEN` | Fine-grained token GitHubu jen pro repozitář `mys-aladin`, oprávnění Actions: Read and write, nic dalšího |
 
-```sh
-npx wrangler@4 login
-npx wrangler@4 kv namespace create STATE
-```
+Chybějící secret workflow ohlásí jménem hned v prvním kroku. Obnovený token
+stačí uložit do secretu a workflow spustit ručně; secret Workeru se nastavuje
+při každém nasazení znovu.
 
-Druhý příkaz vypíše `id` jmenného prostoru. To patří do `wrangler.toml` místo
-`REPLACE_WITH_NAMESPACE_ID`; není tajné, může být v gitu. Pak:
+Mezi nasazením a předáním tokenu Worker při případném probuzení jen zapíše do
+logu odmítnuté spuštění, nic tím nerozbije. Každé probuzení zapíše jeden řádek,
+například `wait: 2026-09-28T00:00Z has 30/31 files` nebo `dispatch: attempt 1
+of 3`. Řádky jsou v dashboardu Cloudflare v logu Workeru (Workers & Pages →
+`mys-aladin-dispatch` → Logs).
 
-```sh
-npx wrangler@4 deploy
-npx wrangler@4 secret put GITHUB_TOKEN
-```
+Konfigurace a sestavení Workeru jsou ověřené příkazem `wrangler deploy
+--dry-run` (wrangler 4.149.0). Skutečné nasazení proti účtu ověří až první běh
+workflow.
 
-Token se vkládá až na výzvu příkazu, do historie shellu se tak nedostane.
-Mezi nasazením a vložením tokenu Worker při případném probuzení jen zapíše do
-logu odmítnuté spuštění, nic tím nerozbije.
+### Ruční nasazení
 
-Průběh jde sledovat příkazem `npx wrangler@4 tail`. Každé probuzení zapíše
-jeden řádek, například `wait: 2026-09-28T00:00Z has 30/31 files` nebo
-`dispatch: attempt 1 of 3`. Stejné řádky jsou v dashboardu v logu Workeru.
-
-### Přes dashboard
-
-Workers & Pages → Create → Worker. Do editoru vlož `src/index.js`. V nastavení
-Workeru přidej:
-
-- proměnné z oddílu `[vars]` ve `wrangler.toml`,
-- secret `GITHUB_TOKEN`,
-- vazbu na KV namespace pod jménem `STATE`,
-- Cron Trigger `*/10 * * * *`,
-- a vypni veřejnou adresu `workers.dev`.
+Bez GitHub Actions jde Worker nasadit z počítače s Node.js v adresáři
+`cloudflare/dispatch/`. Postup: `npx wrangler@4 login`, pak `npx wrangler@4 kv
+namespace create STATE` a vypsané `id` vložit do `wrangler.toml`. Potom `npx
+wrangler@4 deploy` a `npx wrangler@4 secret put GITHUB_TOKEN`, který si token
+vyžádá na výzvu, takže se nedostane do historie shellu.
 
 ### Místní vyzkoušení
 
@@ -114,7 +113,8 @@ cd cloudflare/dispatch && node --test
 ```
 
 Běží proti falešnému webu, výpisům ČHMÚ a API GitHubu, takže nic nestahují.
-Workflow `forecast` je zatím nespouští, pouští jen `tests/test_dispatch.py`.
+Pouští je workflow `dispatcher` před každým nasazením. Workflow `forecast` je
+nespouští, z kontroly Workeru u něj běží jen `tests/test_dispatch.py`.
 
 ## Neověřeno
 

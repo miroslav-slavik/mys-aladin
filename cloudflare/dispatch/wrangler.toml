@@ -1,4 +1,4 @@
-# Deployment of the dispatcher; the steps are in docs/spoustec.md.
+# Deployed by .github/workflows/dispatcher.yml; see docs/spoustec.md.
 name = "mys-aladin-dispatch"
 main = "src/index.js"
 compatibility_date = "2026-09-01"
@@ -15,11 +15,11 @@ SOURCE_URL = "https://opendata.chmi.cz/meteorology/weather/nwp_aladin/CZ_1km"
 GITHUB_REPO = "miroslav-slavik/mys-aladin"
 GITHUB_WORKFLOW = "forecast.yml"
 GITHUB_REF = "main"
-# GITHUB_TOKEN is a secret: npx wrangler secret put GITHUB_TOKEN
+# GITHUB_TOKEN is a secret, set by the deploy workflow.
 
 [[kv_namespaces]]
 binding = "STATE"
-# Printed by: npx wrangler kv namespace create STATE
+# Filled in by the deploy workflow, which finds or creates the namespace.
 id = "REPLACE_WITH_NAMESPACE_ID"
 
 [observability]
