@@ -74,6 +74,12 @@ variables → Actions):
 | `CLOUDFLARE_ACCOUNT_ID` | Identifikátor účtu, hexadecimální řetězec v adrese dashboardu (`dash.cloudflare.com/<id>/…`) |
 | `DISPATCH_GITHUB_TOKEN` | Fine-grained token GitHubu jen pro repozitář `mys-aladin`, oprávnění Actions: Read and write, nic dalšího |
 
+Účet Cloudflare musí mít subdoménu `*.workers.dev`, jinak Cloudflare odmítne
+nastavit plán (chyba 10063), i když Worker veřejnou adresu nemá. Subdoména se
+založí při prvním otevření stránky Workers & Pages v dashboardu. Při prvním
+nasazení 10. 10. 2026 chyběla, Worker se nahrál bez plánu a pomohlo otevřít
+dashboard a spustit workflow znovu.
+
 Chybějící secret workflow ohlásí jménem hned v prvním kroku. Obnovený token
 stačí uložit do secretu a workflow spustit ručně; secret Workeru se nastavuje
 při každém nasazení znovu.
@@ -84,9 +90,9 @@ například `wait: 2026-09-28T00:00Z has 30/31 files` nebo `dispatch: attempt 1
 of 3`. Řádky jsou v dashboardu Cloudflare v logu Workeru (Workers & Pages →
 `mys-aladin-dispatch` → Logs).
 
-Konfigurace a sestavení Workeru jsou ověřené příkazem `wrangler deploy
---dry-run` (wrangler 4.149.0). Skutečné nasazení proti účtu ověří až první běh
-workflow.
+Nasazeno 10. 10. 2026 během `dispatcher` #1 (druhý pokus): plán
+`*/10 * * * *`, úložiště KV `mys-aladin-dispatch-state` a secret
+`GITHUB_TOKEN`.
 
 ### Ruční nasazení
 

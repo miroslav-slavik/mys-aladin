@@ -26,7 +26,10 @@ autentizace, žádný trvale běžící server.
   hledáním obce nebo souřadnicemi. Data pro něj nese plošný balík: mřížka
   prořídlá na 2 km, veličiny teplota, srážky, sníh a oblačnost, bez větru.
   Vítr a plné rozlišení 1 km zůstávají výsadou vyjmenovaných míst.
-- **Hosting:** GitHub Actions (cron) + GitHub Pages
+- **Hosting:** GitHub Actions + GitHub Pages. Workflow `forecast` spouští
+  Cloudflare Worker (`cloudflare/dispatch/`, popis v `docs/spoustec.md`), jakmile
+  je v ČHMÚ kompletní nový běh; cron v Actions zůstává jako záloha. Worker
+  nasazuje workflow `dispatcher` z tokenů uložených v secrets repozitáře.
 
 ## Zdroj dat
 
