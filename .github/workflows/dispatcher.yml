@@ -1,0 +1,93 @@
+name: dispatcher
+
+# Deploys the Cloudflare Worker in cloudflare/dispatch/, which starts the
+# forecast workflow as soon as a new model run is complete (docs/spoustec.md).
+# Credentials never leave the repository secrets:
+#   CLOUDFLARE_API_TOKEN   account token: Workers Scripts Write,
+#                          Workers KV Storage Write, Account Settings Read
+#   CLOUDFLARE_ACCOUNT_ID  the account the Worker lives in
+#   DISPATCH_GITHUB_TOKEN  fine-grained token for this repository with
+#                          Actions read and write, handed to the Worker
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cloudflare/dispatch/**"
+      - ".github/workflows/dispatcher.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dispatcher
+  cancel-in-progress: false
+
+env:
+  WRANGLER: wrangler@4.149.0
+  WRANGLER_SEND_METRICS: "false"
+  KV_TITLE: mys-aladin-dispatch-state
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloudflare/dispatch
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check the secrets are in place
+        env:
+          DISPATCH_GITHUB_TOKEN: ${{ secrets.DISPATCH_GITHUB_TOKEN }}
+        run: |
+          missing=""
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          [ -n "$DISPATCH_GITHUB_TOKEN" ] || missing="$missing DISPATCH_GITHUB_TOKEN"
+          if [ -n "$missing" ]; then
+            echo "::error::missing repository secrets:$missing"
+            exit 1
+          fi
+
+      - name: Run tests
+        run: node --test
+
+      - name: Find or create the KV namespace
+        # The id is not secret, but it only exists once the namespace does, so
+        # it is looked up here instead of being kept in wrangler.toml.
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces"
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          id=$(curl -fsS -H "$auth" "$api?per_page=100" \
+            | jq -r --arg title "$KV_TITLE" '.result[] | select(.title == $title) | .id')
+          if [ -z "$id" ]; then
+            id=$(curl -fsS -X POST -H "$auth" -H "Content-Type: application/json" \
+              --data "$(jq -n --arg title "$KV_TITLE" '{title: $title}')" "$api" | jq -r '.result.id')
+            echo "created KV namespace $KV_TITLE: $id"
+          else
+            echo "using KV namespace $KV_TITLE: $id"
+          fi
+          if [ -z "$id" ] || [ "$id" = null ]; then
+            echo "::error::no KV namespace id"
+            exit 1
+          fi
+          sed -i "s/REPLACE_WITH_NAMESPACE_ID/$id/" wrangler.toml
+          grep -q "id = \"$id\"" wrangler.toml
+
+      - name: Deploy the Worker
+        run: npx --yes "$WRANGLER" deploy
+
+      - name: Hand the GitHub token to the Worker
+        # Every deploy sets it again, so a renewed token only needs a new
+        # repository secret and a run of this workflow.
+        env:
+          DISPATCH_GITHUB_TOKEN: ${{ secrets.DISPATCH_GITHUB_TOKEN }}
+        run: printf '%s' "$DISPATCH_GITHUB_TOKEN" | npx --yes "$WRANGLER" secret put GITHUB_TOKEN

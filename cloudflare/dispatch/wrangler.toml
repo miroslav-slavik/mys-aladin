@@ -1,0 +1,26 @@
+# Deployed by .github/workflows/dispatcher.yml; see docs/spoustec.md.
+name = "mys-aladin-dispatch"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# No public URL: the Worker only reacts to its schedule.
+workers_dev = false
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+SITE_URL = "https://miroslav-slavik.github.io/mys-aladin"
+SOURCE_URL = "https://opendata.chmi.cz/meteorology/weather/nwp_aladin/CZ_1km"
+GITHUB_REPO = "miroslav-slavik/mys-aladin"
+GITHUB_WORKFLOW = "forecast.yml"
+GITHUB_REF = "main"
+# GITHUB_TOKEN is a secret, set by the deploy workflow.
+
+[[kv_namespaces]]
+binding = "STATE"
+# Filled in by the deploy workflow, which finds or creates the namespace.
+id = "REPLACE_WITH_NAMESPACE_ID"
+
+[observability]
+enabled = true
