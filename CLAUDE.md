@@ -76,7 +76,9 @@ autentizace, žádný trvale běžící server.
    - zjistí nejnovější kompletní běh modelu,
    - stáhne pouze GRIB soubory potřebných parametrů,
    - metodou nejbližšího bodu extrahuje časové řady pro definovaná místa,
-   - zapíše `data/forecast.json` podle schématu níže,
+   - zapíše `forecast.json` podle schématu níže do větve `data`, kterou
+     workflow checkoutne do `published/`; na webu leží na adrese
+     `data/forecast.json`,
    - je idempotentní: pokud je běh podle `run_id` již zpracován, skončí
      bez akce.
 2. **PWA (`web/`)** — statická aplikace bez backendu:
@@ -117,7 +119,7 @@ Návrh k upřesnění ve Fázi 2 podle skutečných jednotek zjištěných ve F�
 
 ## Plošný balík
 
-Druhý výstup pipeline vedle `data/forecast.json`. Nese prořídlou mřížku pro
+Druhý výstup pipeline vedle `forecast.json`. Nese prořídlou mřížku pro
 místa zadaná v aplikaci a do gitu nepatří, protože má 13 MB na běh: zapisuje se
 do `build/area` a na Pages se dostane přes cache Actions. Formát dlaždic i
 `index.json` popisuje `docs/pipeline.md`. Se sněhem má šest bajtů na bod

@@ -225,6 +225,9 @@ __marimo__/
 !tests/fixtures/*.grb
 !tests/fixtures/*.grib2
 
+# The data branch, checked out beside the code
+/published/
+
 # Pipeline temporary files
 data/*.tmp
 tmp/

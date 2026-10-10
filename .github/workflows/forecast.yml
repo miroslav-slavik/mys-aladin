@@ -37,6 +37,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The published forecast lives on its own branch, so that main holds
+      # code only. Checked out beside the code, it is also what the pipeline
+      # compares the newest run against.
+      - uses: actions/checkout@v4
+        with:
+          ref: data
+          path: published
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -53,7 +61,7 @@ jobs:
         # The scheduled runs never force; only a manual dispatch can, which is
         # what makes a publish testable outside the model's publication window.
         run: |
-          python -m pipeline ${{ inputs.force && '--force' || '' }}
+          python -m pipeline --output published/forecast.json ${{ inputs.force && '--force' || '' }}
           # A run that found nothing new writes neither output, so there is
           # nothing to hand over either.
           if [ -d build/area ]; then
@@ -77,15 +85,14 @@ jobs:
           key: area-v1-${{ steps.build.outputs.run_id }}-${{ github.run_id }}
 
       - name: Publish when the run changed
+        working-directory: published
         run: |
-          # --porcelain also reports the file as untracked, which is what the
-          # very first run looks like; git diff alone would miss that.
-          if [ -z "$(git status --porcelain -- data/forecast.json)" ]; then
+          if [ -z "$(git status --porcelain -- forecast.json)" ]; then
             echo "no new run, nothing to publish"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/forecast.json
-          git commit -m "Update forecast to run $(python -c "import json;print(json.load(open('data/forecast.json'))['run_id'])")"
+          git add forecast.json
+          git commit -m "Update forecast to run $(python -c "import json;print(json.load(open('forecast.json'))['run_id'])")"
           git push
