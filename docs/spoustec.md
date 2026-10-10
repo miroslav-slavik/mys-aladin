@@ -47,7 +47,9 @@ minuty na běh `forecast` a nasazení `pages`.
   kvůli prošlému tokenu), nic neběželo a nic se nestáhlo. Worker to zapíše do
   logu jako chybu a zkusí to při dalším probuzení.
 - **Bez vstupů.** Worker nikdy nepředává `force`, vynucené přestavění zůstává
-  ruční volbou.
+  ruční volbou. Kdyby token Workeru unikl, `force` stejně neprojde: workflow ho
+  respektuje jen při proměnné repozitáře `ALLOW_FORCE=true` a tu token měnit
+  nemůže (viz `docs/pipeline.md`).
 - **Bez veřejné adresy.** `workers_dev = false`: Worker reaguje jen na svůj
   plán, zvenku se na něj nedá zavolat.
 

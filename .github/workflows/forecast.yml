@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: "Rebuild even when the newest run is already published"
+        description: "Rebuild even when the newest run is already published (needs the repository variable ALLOW_FORCE set to true)"
         type: boolean
         default: false
 
@@ -60,8 +60,23 @@ jobs:
         id: build
         # The scheduled runs never force; only a manual dispatch can, which is
         # what makes a publish testable outside the model's publication window.
+        # A forced run downloads the whole model run, and the token the
+        # Cloudflare dispatcher holds may start this workflow with any input,
+        # so force also needs the repository variable ALLOW_FORCE. That token
+        # cannot change repository variables.
+        env:
+          FORCE_REQUESTED: ${{ inputs.force }}
+          FORCE_ALLOWED: ${{ vars.ALLOW_FORCE }}
         run: |
-          python -m pipeline --output published/forecast.json ${{ inputs.force && '--force' || '' }}
+          force=""
+          if [ "$FORCE_REQUESTED" = true ]; then
+            if [ "$FORCE_ALLOWED" = true ]; then
+              force="--force"
+            else
+              echo "::warning::force ignored: set the repository variable ALLOW_FORCE to true to allow it"
+            fi
+          fi
+          python -m pipeline --output published/forecast.json $force
           # A run that found nothing new writes neither output, so there is
           # nothing to hand over either.
           if [ -d build/area ]; then

@@ -222,6 +222,17 @@ uvízl ve frontě bez runneru, zdržel od 5. do 8. 10. všechna další nasazen�
 Ruční spuštění přes **Actions → forecast → Run workflow** má volitelný přepínač
 `force`. Bez něj se workflow chová stejně jako plánovaný běh. S ním předá
 pipeline `--force`, takže se předpověď přepočítá i pro už zpracovaný běh.
+Platí to ale jen tehdy, když je v Settings → Secrets and variables → Actions →
+Variables proměnná repozitáře `ALLOW_FORCE` nastavená na `true`. Jinak workflow
+`force` ignoruje, vypíše varování a proběhne jako obyčejný běh.
+
+Vypínač chrání ČHMÚ. Vynucený běh pokaždé stáhne celý běh modelu (asi 63 MB).
+Token, který drží spouštěč na Cloudflare, umí workflow spustit s libovolnými
+vstupy a umí i znovu spustit dřívější vynucený běh. GitHub přitom nerozliší
+spuštění z rozhraní od spuštění přes API. Proměnné repozitáře ale ten token
+měnit nemůže, takže ani při jeho úniku nejde vynucené běhy opakovat. Před
+ručním testem proto `ALLOW_FORCE` zapni a po něm ji vrať na `false`, případně
+smaž.
 Slouží k odladění publikace mimo okno, kdy ČHMÚ zveřejňuje nová data. Počítejte
 s tím, že vynucený běh změní pole `generated_at`, takže vždy vznikne commit,
 i když jsou samotné hodnoty předpovědi shodné. Plánované běhy nikdy nevynucují.
