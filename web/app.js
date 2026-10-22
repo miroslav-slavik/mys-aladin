@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v49";
+const APP_VERSION = "v50";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -1363,7 +1363,10 @@ function choosePlace(place) {
 
 document.getElementById("useLocation").addEventListener("click", () => followNow(true));
 
+let lastLoad = 0;
+
 async function load(force = false) {
+  lastLoad = Date.now();
   // The cache buster is for the CDN in front of Pages: without it a forced
   // reload can be answered with the very copy the user is trying to replace.
   const url = force ? `data/forecast.json?t=${Date.now()}` : "data/forecast.json";
@@ -1395,6 +1398,25 @@ window.addEventListener("resize", () => {
 
 window.addEventListener("online", () => load());
 window.addEventListener("offline", updateAge);
+
+/* An app on the home screen is not reloaded when it comes back to the front:
+   iOS resumes the page as it was left, possibly hours ago, with the old
+   forecast and the old hour under "now". So coming back fetches the forecast
+   again, past the CDN like the button does, unless the last fetch is only
+   moments old, as it is when the app is switched away and back at once. */
+const RESUME_REFETCH_MS = 60e3;
+
+function resume() {
+  if (document.hidden || Date.now() - lastLoad < RESUME_REFETCH_MS) return;
+  load(true);
+}
+
+document.addEventListener("visibilitychange", resume);
+// A page restored from the back-forward cache comes back without a
+// visibility change.
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) resume();
+});
 
 // The age creeps up while the app sits open on the home screen.
 setInterval(updateAge, 60e3);

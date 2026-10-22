@@ -320,6 +320,15 @@ Tlačítko se šipkou v hlavičce vynutí načtení znovu. Přidává k adrese �
 razítko a žádá `cache: "reload"`, jinak by CDN před GitHub Pages mohla vrátit
 právě tu kopii, kterou se uživatel snaží nahradit.
 
+Aplikace na ploše iPhonu se při návratu do popředí znovu nenačítá: iOS ji
+obnoví tak, jak byla opuštěna, klidně před několika hodinami, se starou
+předpovědí i starou hodinou pod značkou „teď“. Proto si aplikace při každém
+návratu (`visibilitychange`, u stránky obnovené z mezipaměti prohlížeče
+`pageshow`) stáhne předpověď znovu, stejně jako tlačítko, tedy s časovým
+razítkem kolem CDN. Výjimkou je případ, kdy od posledního stažení neuplynula
+ani minuta, například při rychlém přepnutí do jiné aplikace a zpět. Kontrola
+nové verze aplikace při návratu běží odděleně, viz níže.
+
 Instalace na iPhonu: Safari, tlačítko Sdílet, **Přidat na plochu**. Manifest
 nastaví samostatné okno bez adresního řádku, ikony jsou v `web/icons/`.
 
