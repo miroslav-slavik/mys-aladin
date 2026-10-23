@@ -135,14 +135,8 @@ jak se dostat k předpovědi pro místo, které pipeline nezná:
 
 - **Moje poloha** přes `navigator.geolocation`. Není to jednorázová akce, ale
   **režim**: ve výchozím stavu zapnutý, takže aplikace se otevírá tam, kde
-  právě je. Sama se poloha čte při otevření, při návratu do popředí a při
-  obnovení, ale jen tehdy, když už je povolení udělené a iOS se nemusí ptát
-  (zjišťuje to `navigator.permissions.query`). Aplikace spuštěná z plochy
-  totiž dostává dotaz na polohu znovu téměř při každém spuštění, a protože
-  se předpověď stahuje i při každém návratu do popředí, vyskakoval by dotaz
-  pořád. Když by se iOS musel ptát, zůstane zobrazené naposledy zjištěné
-  místo a polohu aktualizuje až ťuknutí na „Moje poloha“. Kde Permissions
-  API chybí, platí to jako nutnost se ptát.
+  právě je. Poloha se čte při každém otevření, při každém návratu do popředí
+  i při obnovení tlačítkem.
   Vypne ho výběr jakéhokoli jiného místa, zpět ho zapne ťuknutí na tuto volbu.
   Stav drží `localStorage` pod klíčem `mys-aladin.follow`, a to jako objekt,
   protože samotné `false` by se nedalo odlišit od prázdného úložiště.

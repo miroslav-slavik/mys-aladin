@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v51";
+const APP_VERSION = "v52";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -827,7 +827,7 @@ function render(forecast, fromCache) {
   const wanted = promote(state.place || stored(STORED_PLACE) || listedPlaces()[0]);
   selectPlace(wanted);
   setFollowing(following());
-  if (following()) followQuietly();
+  if (following()) followNow();
 }
 
 /* ---------- places ---------- */
@@ -1352,21 +1352,6 @@ async function followNow(announce = false) {
     // single start; it belongs in the panel, where the mode can be turned off.
     if (announce) report(message);
     else note(message);
-  }
-}
-
-/* The position is read on its own, on opening, on a return to the front and
-   on a refresh, only when that needs no question. iOS asks a home screen app
-   again on almost every start, and with the forecast fetched on each return
-   an automatic read would put the question up every time. Otherwise the last
-   followed place stays on screen until "Moje poloha" is tapped. Without the
-   Permissions API there is no telling, which counts as having to ask. */
-async function followQuietly() {
-  try {
-    const status = await navigator.permissions.query({ name: "geolocation" });
-    if (status.state === "granted") await followNow();
-  } catch {
-    // No Permissions API, or no answer from it: stay quiet.
   }
 }
 
