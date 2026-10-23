@@ -137,6 +137,9 @@ jak se dostat k předpovědi pro místo, které pipeline nezná:
   **režim**: ve výchozím stavu zapnutý, takže aplikace se otevírá tam, kde
   právě je. Poloha se čte při každém otevření, při každém návratu do popředí
   i při obnovení tlačítkem.
+  Aby se iOS u aplikace spuštěné z plochy neptal na povolení pokaždé, stačí
+  v iPhonu nastavit Nastavení → Aplikace → Safari → Poloha na „Povolit“
+  (ověřeno v provozu 23. 10. 2026).
   Vypne ho výběr jakéhokoli jiného místa, zpět ho zapne ťuknutí na tuto volbu.
   Stav drží `localStorage` pod klíčem `mys-aladin.follow`, a to jako objekt,
   protože samotné `false` by se nedalo odlišit od prázdného úložiště.
