@@ -44,7 +44,7 @@
 
 <section class="now" aria-label="Aktuální hodina">
   <div class="now-main">
-    <p class="now-temp">
+    <p class="now-temp" data-view="temperature" role="button" tabindex="0" aria-label="Graf teploty">
       <svg class="param-icon icon-temp" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
         <path d="M12 3.4a3.1 3.1 0 0 1 3.1 3.1v7.2a5.1 5.1 0 1 1-6.2 0V6.5A3.1 3.1 0 0 1 12 3.4z"
               fill="none" stroke="currentColor" stroke-width="1.8"/>
@@ -53,7 +53,7 @@
       </svg>
       <span id="nowTemp">—</span>
     </p>
-    <p class="now-rain">
+    <p class="now-rain" data-view="temperature" role="button" tabindex="0" aria-label="Graf teploty a srážek">
       <svg class="param-icon icon-rain" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
         <path d="M 6.5,15 a 3.6,3.6 0 0,1 0.4,-7.2 a 4.6,4.6 0 0,1 8.7,-1.2 a 3.6,3.6 0 0,1 1.2,7 Z" fill="currentColor"/>
         <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
@@ -66,7 +66,7 @@
     </p>
   </div>
   <dl class="now-side">
-    <div class="wind">
+    <div class="wind" data-view="wind" role="button" tabindex="0" aria-label="Graf větru">
       <dt>
         <svg class="param-icon icon-wind" viewBox="1 1 22 22" width="24" height="24" aria-hidden="true">
           <g stroke="currentColor" stroke-linecap="round" fill="none">
@@ -83,7 +83,7 @@
       </dt>
       <dd id="nowWind">—</dd>
     </div>
-    <div class="cloud">
+    <div class="cloud" data-view="clouds" role="button" tabindex="0" aria-label="Graf oblačnosti">
       <dt>
         <svg class="param-icon icon-cloud" viewBox="2.5 5.5 17 12.5" width="26" height="19" aria-hidden="true">
           <path d="M 6.5,17 a 3.6,3.6 0 0,1 0.4,-7.2 a 4.6,4.6 0 0,1 8.7,-1.2 a 3.6,3.6 0 0,1 1.2,7 Z" fill="currentColor"/>

@@ -39,7 +39,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v52";
+const APP_VERSION = "v53";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -778,6 +778,24 @@ function selectView(name) {
 document.getElementById("views").addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (button) selectView(button.dataset.view);
+});
+
+/* The readings in the block of the current hour switch the chart too: the
+   temperature and the rain to the chart that carries both, the wind and the
+   cloud to their own. */
+const nowBlock = document.querySelector(".now");
+nowBlock.addEventListener("click", (event) => {
+  const reading = event.target.closest("[data-view]");
+  if (reading) selectView(reading.dataset.view);
+});
+// iOS shows :active, the feedback of a tap, only where a touch is listened to.
+nowBlock.addEventListener("touchstart", () => {}, { passive: true });
+nowBlock.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const reading = event.target.closest("[data-view]");
+  if (!reading) return;
+  event.preventDefault();
+  selectView(reading.dataset.view);
 });
 
 /* ---------- data ---------- */

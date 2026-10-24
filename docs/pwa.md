@@ -21,6 +21,11 @@ Obrazovka má shora dolů čtyři části: hlavičku s názvem místa, aktuáln�
 a tlačítkem pro načtení znovu, blok aktuální hodiny s velkou teplotou, řádek
 hodinových ikon a jeden graf s přepínači.
 
+Hodnoty v bloku aktuální hodiny přepínají graf stejně jako tlačítka nad ním:
+teplota i srážky na graf teploty, který nese i sloupce srážek, vítr na graf
+větru a oblačnost na graf oblačnosti. U místa bez větru vede klepnutí na vítr
+na graf teploty, stejně jako u tlačítka.
+
 Název místa v hlavičce bere pole `label` z `forecast.json`, tedy „Kyje, Praha 9",
 nikoli interní klíč `name`, který zůstává „Home".
 
