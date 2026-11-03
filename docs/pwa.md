@@ -33,6 +33,14 @@ Graf ukazuje prvních **60 hodin** a vejde se na šířku displeje, takže se ni
 neposouvá a celý průběh je vidět najednou. To je proti dřívější verzi zásadní
 změna: ta měla graf v posuvníku a bylo nutné jej rolovat.
 
+**Výška grafu se řídí obrazovkou.** Plocha grafu má nejméně 220 px a jinak
+zabere všechno místo, které na obrazovce zbude, přičemž patička s údaji o běhu
+zůstane celá vidět pod grafem. Při každém vykreslení se změří, kde končí
+stránka, a graf se o volné místo zvětší, případně zmenší, když stránka
+obrazovku přesahuje (`fitPlotHeight` v `web/app.js`). Na iPhonu s výškou okna
+844 px vychází graf 420 px vysoký místo dřívějších 270 px. Na malém displeji
+zůstává na minimu a stránka se o kousek posune.
+
 Posledních dvanáct hodin se do grafu nekreslí. Při všech 72 hodinách vychází na
 telefonu asi čtyři pixely na hodinu, což je na čtení málo, a konec dosahu je
 zároveň nejméně spolehlivá část běhu. Tabulka nadále obsahuje všech 72 hodin.
@@ -74,23 +82,23 @@ toho prosvítal a působil, jako by ležel před grafem. Důsledek je, že v
 pohledech, kde plocha zabírá skoro celou výšku, je podklad vidět jen nad
 křivkou.
 Půlnoc navíc kreslí silnější svislici než ostatní šestihodinové značky.
+Pod osou má každá hodina krátkou značku, každá šestá delší s číslem.
 
-**Popisek na začátku křivky.** Vedle maxima a minima je označena i hodnota
-prvního kroku, aby bylo hned zřejmé, odkud předpověď vychází.
+**Popisek u čáry „teď“.** Přednost před všemi ostatními má hodnota aktuální
+hodiny, tedy té, kterou ukazuje hlavička. Stojí vpravo od čáry „teď“, a to na
+straně, kam se křivka vzdaluje: pod ní, když další hodiny stoupají, nad ní,
+když klesají. Hodnota prvního kroku grafu se označí jen tehdy, když leží
+od čáry „teď“ dál než 62 px; jinak by se oba popisky překrývaly.
 
-**Zima má vlastní barvy.** Teplota pod nulou se kreslí studenou dvojicí barev
-`--cold` a `--cold-line`, bledě modrou, která je světlejší než sloupce srážek,
-takže se obě modři nepletou. Přechod obstarají dvě lineární výplně přes celou
-výšku grafu, jejichž obě zarážky leží na výšce nuly, takže se barva mění přesně
-na nule, ať křivka projde kudykoli. Obě poloviny plochy mají stejné krytí, takže
-studená je stejně zjevně průsvitná jako teplá.
-
-Osa teploty má dole rezervu dva stupně pod minimem. Když ale křivka v grafu
-nulu vůbec nepodkročí, osa začíná nejníž na nule. Jinak by rezerva přetáhla
-osu pod nulu a pás plochy mezi nulou a spodním okrajem by se obarvil modře,
-jako by hrozil mráz, který předpověď nečeká. Tak se to stalo 11. 10. 2026 při
-minimu 1,2 °C. Leží-li nula na okraji grafu nebo za ním, nese výplň jedinou
-zarážku, celou teplou nebo celou studenou.
+**Zima má vlastní barvy.** Hodiny s teplotou pod nulou se kreslí studenou
+dvojicí barev `--cold` a `--cold-line`, bledě modrou, která je světlejší než
+sloupce srážek, takže se obě modři nepletou. Barví se po hodinách jako
+v předloze: celý sloupec plochy pod křivkou i úsek křivky v hodinách mrazu,
+takže je na první pohled vidět, kdy mrzne. Přechod obstarají dvě vodorovné
+lineární výplně přes šířku grafu se dvěma zarážkami v každém místě, kde křivka
+protne nulu. To místo se dopočítá přímou interpolací mezi sousedními hodinami.
+Obě barvy plochy mají stejné krytí, takže studená je stejně zjevně průsvitná
+jako teplá. Do verze v53 se plocha dělila vodorovně na výšce 0 °C.
 
 Sloupec srážek je celý modrý, celý bílý, nebo pruhovaný. Rozhoduje podíl pole
 `snow_mm` na hodinovém úhrnu: od devíti desetin výš je hodina sněhová, do
@@ -118,6 +126,14 @@ nemůže.
 **Popisky extrémů se vybírají podle výraznosti**, ne zleva doprava, a rozestup
 se hlídá v pixelech. Jinak by se popisky slily a nejvyšší vrchol dne by zůstal
 bez čísla, protože místo by zabral mírný ranní hrbol.
+
+**Pocitová teplota** stojí pod teplotou, menším písmem a zarovnaná na její
+konec, aby obě značky °C ležely pod sebou. Počítá se jako ochlazení větrem
+(wind chill) podle vzorce Environment Canada a americké meteorologické služby
+z roku 2001: platí při teplotě do 10 °C a větru aspoň 4,8 km/h, jinde je
+pocitová teplota rovna skutečné. Data neobsahují vlhkost, takže dusno
+v horkém dni se do ní nepromítá. U bodu z plošného balíku, který vítr nemá,
+se řádek skryje.
 
 **Veličiny v hlavičce označují ikony, ne slova**, stejně jako v předloze:
 teploměr, přeháňka, větrná turbína a mrak. Kreslené jsou zdejší, jen podle

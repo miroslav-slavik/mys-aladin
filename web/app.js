@@ -11,9 +11,12 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const PAD_L = 8;
 const PAD_R = 8;
 const PAD_T = 14;
-const PLOT_H = 220;
+/* The plot is at least this tall and otherwise takes whatever height the
+   screen has left, with the footer still in view below it. */
+const MIN_PLOT_H = 220;
+let PLOT_H = MIN_PLOT_H;
 const AXIS_H = 36;
-const SVG_H = PAD_T + PLOT_H + AXIS_H;
+const svgHeight = () => PAD_T + PLOT_H + AXIS_H;
 
 const DAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
 
@@ -39,7 +42,7 @@ const state = {
 /* Bumped together with CACHE in sw.js, and tests/test_web.py insists the two
    agree: the footer is only worth reading if the number in it is the one the
    files were shipped with. */
-const APP_VERSION = "v53";
+const APP_VERSION = "v54";
 
 const STORED_PLACE = "mys-aladin.place";
 const STORED_FOLLOW = "mys-aladin.follow";
@@ -245,8 +248,9 @@ function drawChart(fullSeries, viewName) {
   const svg = document.getElementById("chart");
   svg.textContent = "";
   const width = Math.max(svg.clientWidth || 340, 240);
-  svg.setAttribute("viewBox", `0 0 ${width} ${SVG_H}`);
-  svg.setAttribute("height", SVG_H);
+  fitPlotHeight(svg);
+  svg.setAttribute("viewBox", `0 0 ${width} ${svgHeight()}`);
+  svg.setAttribute("height", svgHeight());
 
   const left = PAD_L;
   const right = width - PAD_R;
@@ -264,10 +268,6 @@ function drawChart(fullSeries, viewName) {
     lo = Math.min(...values) - view.pad[0];
     hi = Math.max(...values) + view.pad[1];
   }
-  // The padding must not carry a warm chart across nought: everything under
-  // the freezing line is drawn cold, and a strip of it under a curve that
-  // never freezes reads as frost that is not forecast.
-  if (view.freezing && Math.min(...values) >= 0) lo = Math.max(lo, 0);
   const y = (v) => base - ((v - lo) / (hi - lo || 1)) * PLOT_H;
 
   const points = series.map((row, i) => [x(i), y(view.value(row))]);
@@ -276,10 +276,9 @@ function drawChart(fullSeries, viewName) {
   drawDayBands(svg, series, x, base);
   drawGrid(svg, series, niceTicks(lo, hi, 4), x, y, left, right, base);
 
-  // Below freezing the temperature is drawn in the cold pair of colours. The
-  // change of colour is a gradient with both stops on the same line, so it
-  // falls exactly on nought degrees wherever the curve happens to cross it.
-  const paint = view.freezing ? defineFreezing(svg, y) : null;
+  // The hours below freezing are drawn in the cold pair of colours, the
+  // whole column under the curve, so that the frosty hours read at a glance.
+  const paint = view.freezing ? defineFreezing(svg, values, x, left, right) : null;
   const areaFill = el("path", {
     d: area,
     fill: paint ? paint.fill : view.fill,
@@ -302,30 +301,48 @@ function drawChart(fullSeries, viewName) {
   attachCursor(svg, series, x, width);
 }
 
-/* Two gradients down the plot, one for the filled area and one for the curve,
-   each with its warm and its cold stop on the height of nought degrees. A
-   freezing line on or beyond an edge of the plot leaves a single stop, so the
-   chart is plainly all warm or all cold rather than resting on two stops that
-   meet exactly at the edge. */
-function defineFreezing(svg, y) {
+/* Two gradients across the plot, one for the filled area and one for the
+   curve. The colour changes where the curve crosses nought, found between the
+   two hours on either side by straight interpolation, and each change is a
+   pair of stops on the same spot, so it is a sharp edge. */
+function defineFreezing(svg, values, x, left, right) {
+  const cold = (v) => v < 0;
+  const changes = [];
+  for (let i = 0; i < values.length - 1; i++) {
+    if (cold(values[i]) === cold(values[i + 1])) continue;
+    const t = (0 - values[i]) / (values[i + 1] - values[i]);
+    changes.push({ offset: (x(i + t) - left) / (right - left || 1), cold: cold(values[i + 1]) });
+  }
   const defs = el("defs", {}, svg);
-  const offset = (y(0) - PAD_T) / PLOT_H;
-  for (const [id, warm, cold] of [
+  for (const [id, warmClass, coldClass] of [
     ["freezing-fill", "warm-fill", "cold-fill"],
     ["freezing-line", "warm-line", "cold-line"],
   ]) {
     const gradient = el("linearGradient", {
-      id,
-      gradientUnits: "userSpaceOnUse",
-      x1: 0,
-      y1: PAD_T,
-      x2: 0,
-      y2: PAD_T + PLOT_H,
+      id, gradientUnits: "userSpaceOnUse", x1: left, y1: 0, x2: right, y2: 0,
     }, defs);
-    if (offset > 0) el("stop", { offset: Math.min(offset, 1), class: warm }, gradient);
-    if (offset < 1) el("stop", { offset: Math.max(offset, 0), class: cold }, gradient);
+    const kind = (isCold) => (isCold ? coldClass : warmClass);
+    el("stop", { offset: 0, class: kind(cold(values[0])) }, gradient);
+    for (const change of changes) {
+      el("stop", { offset: change.offset, class: kind(!change.cold) }, gradient);
+      el("stop", { offset: change.offset, class: kind(change.cold) }, gradient);
+    }
   }
   return { fill: "url(#freezing-fill)", stroke: "url(#freezing-line)" };
+}
+
+/* The free room is what the screen has below the end of the page; the plot
+   grows by it, or shrinks when the page has grown taller than the screen,
+   though never below MIN_PLOT_H. Measured with the chart at its present
+   height, so a second pass finds nothing left to take. */
+function fitPlotHeight(svg) {
+  const shown = svg.getBoundingClientRect().height;
+  if (!shown) return;
+  const footer = document.querySelector("footer");
+  const end = footer.getBoundingClientRect().bottom + window.scrollY
+    + parseFloat(getComputedStyle(document.body).paddingBottom || 0);
+  const free = window.innerHeight - end;
+  PLOT_H = Math.max(MIN_PLOT_H, Math.floor(shown + free - PAD_T - AXIS_H));
 }
 
 /* Everything that belongs behind the chart - the day bands and the grid - is
@@ -333,7 +350,7 @@ function defineFreezing(svg, y) {
    area, by the even-odd rule. */
 function defineGridClip(svg, width, area) {
   const clip = el("clipPath", { id: "grid-clip" }, el("defs", {}, svg));
-  el("path", { d: `M 0,0 H ${width} V ${SVG_H} H 0 Z ${area}`, "clip-rule": "evenodd" }, clip);
+  el("path", { d: `M 0,0 H ${width} V ${svgHeight()} H 0 Z ${area}`, "clip-rule": "evenodd" }, clip);
 }
 
 /* Days are told apart by the ground they stand on, not only by the names under
@@ -480,12 +497,30 @@ function labelExtremes(svg, series, view, x, y) {
 
   // Where the forecast starts is worth a number of its own, so the first point
   // is labelled before the extremes compete for the remaining room.
-  const placed = [{
+  // The value under the line of "now" comes before anything else: it is the
+  // hour the header shows, written next to the line, right of it.
+  const placed = [];
+  const position = nowPosition(series);
+  if (position !== null) {
+    const index = series.indexOf(currentRow(series));
+    // The label is written right of the line, so it goes on the side the
+    // curve leaves: below it when the next hours rise, above when they fall.
+    const ahead = values[Math.min(index + 3, values.length - 1)];
+    placed.push({
+      index,
+      value: values[index],
+      isMax: ahead <= values[index],
+      anchor: "start",
+      at: x(position) + 3,
+    });
+  }
+  placed.push({
     index: 0,
     value: values[0],
     isMax: values[0] >= values[1],
     anchor: "start",
-  }];
+  });
+  if (placed.length > 1 && Math.abs(x(0) - x(placed[0].index)) < 62) placed.pop();
   for (const point of found) {
     if (placed.length >= 5) break;
     // Labels are spaced in pixels, not in hours: at this density two extremes
@@ -503,7 +538,9 @@ function labelExtremes(svg, series, view, x, y) {
     const below = !point.isMax && y(point.value) + 14 <= bottom;
     const offset = above ? -7 : below ? 14 : point.isMax ? 14 : -7;
     const anchor = point.anchor || "middle";
-    const x0 = anchor === "start"
+    const x0 = point.at !== undefined
+      ? Math.min(point.at, x(series.length - 1) - 48)
+      : anchor === "start"
       ? x(point.index) + 2
       : Math.min(Math.max(x(point.index), PAD_L + 24), x(series.length - 1) - 24);
     el("text", {
@@ -542,10 +579,14 @@ function drawTimeAxis(svg, series, x, base, left, right) {
   el("line", { class: "axis-line", x1: left, y1: base, x2: right, y2: base }, svg);
   series.forEach((row, i) => {
     const hour = row.date.getHours();
-    if (hour % 6 !== 0) return;
-    // The tick mark below the axis is outside the plot, so it is drawn here
+    // Every hour has a short mark under the axis, every sixth a longer one
+    // with its number. They are outside the plot, so they are drawn here
     // rather than in the clipped grid.
-    el("line", { class: "grid-line", x1: x(i), y1: base, x2: x(i), y2: base + 4 }, svg);
+    if (hour % 6 !== 0) {
+      el("line", { class: "grid-line", x1: x(i), y1: base, x2: x(i), y2: base + 2.5 }, svg);
+      return;
+    }
+    el("line", { class: "grid-line", x1: x(i), y1: base, x2: x(i), y2: base + 5 }, svg);
     el("text", { class: "tick", x: x(i), y: base + 15, "text-anchor": "middle" }, svg)
       .textContent = String(hour).padStart(2, "0");
     if (hour === 0) {
@@ -563,12 +604,18 @@ function drawTimeAxis(svg, series, x, base, left, right) {
   });
 }
 
-function drawNow(svg, series, x, base) {
+/* Where "now" falls, in hours from the start of the chart; null off it. */
+function nowPosition(series) {
   const now = Date.now();
   const first = series[0].date.getTime();
   const last = series[series.length - 1].date.getTime();
-  if (now < first || now > last) return;
-  const position = ((now - first) / (last - first)) * (series.length - 1);
+  if (now < first || now > last) return null;
+  return ((now - first) / (last - first)) * (series.length - 1);
+}
+
+function drawNow(svg, series, x, base) {
+  const position = nowPosition(series);
+  if (position === null) return;
   el("line", { class: "now-line", x1: x(position), y1: PAD_T, x2: x(position), y2: base }, svg);
   el("text", { class: "now-label", x: x(position) + 3, y: PAD_T + 8 }, svg).textContent = "teď";
 }
@@ -707,8 +754,23 @@ function fill(node, text, places) {
   node.append(text);
 }
 
+/* Wind chill, the formula of Environment Canada and the US weather service
+   (2001), with the wind at 10 m in km/h. It holds at 10 °C and below with
+   at least 4.8 km/h of wind; anywhere else the air feels as warm as it is.
+   Without humidity in the data the heat of a sultry day is not counted. */
+function feelsLike(t, windMs) {
+  const v = windMs * 3.6;
+  if (t > 10 || v < 4.8) return t;
+  const p = v ** 0.16;
+  return 13.12 + 0.6215 * t - 11.37 * p + 0.3965 * t * p;
+}
+
 function showHeader(row) {
   showTemperature(row.t2m);
+  const feels = document.getElementById("nowFeels");
+  // A point from the pack has no wind, so there is nothing to feel it by.
+  feels.hidden = !state.hasWind;
+  if (state.hasWind) feels.textContent = `pocitově ${feelsLike(row.t2m, row.wind_ms).toFixed(1)} °C`;
   const rain = document.getElementById("nowRain");
   fill(rain, `${row.precip_mm.toFixed(1)} mm/h`, 1);
   // The same room the temperature keeps for its sign, so that the two
