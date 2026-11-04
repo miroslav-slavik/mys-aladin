@@ -135,6 +135,13 @@ pocitová teplota rovna skutečné. Data neobsahují vlhkost, takže dusno
 v horkém dni se do ní nepromítá. U bodu z plošného balíku, který vítr nemá,
 se řádek skryje.
 
+**Ikony teploty a srážek jsou velké**, jako v aplikaci Aladin: teploměr je
+vysoký jako teplota i s řádkem pocitové teploty, mrak se srážkami je skoro tak
+široký, jak je teploměr vysoký. Obě kresby mají `viewBox` oříznutý na samotný
+obrys, takže velikost v CSS je velikost kresby, a obě sdílejí šířku sloupce,
+aby obě čísla začínala na jedné svislici. Velikost se odvozuje z písma
+teploty (`--reading`), takže se na úzkém displeji zmenší spolu s ním.
+
 **Veličiny v hlavičce označují ikony, ne slova**, stejně jako v předloze:
 teploměr, přeháňka, větrná turbína a mrak. Kreslené jsou zdejší, jen podle
 předlohy: obrázky na `aladinonline.oblacno.cz` jsou cizí dílo bez otevřené

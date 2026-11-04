@@ -252,9 +252,15 @@ h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
    scale the drawing back to the height from the attribute. Neither icon is
    taller than the line of text beside it, so the section keeps its height and
    the padding stays as it was. */
-.now-main .param-icon { width: 34.65px; }
-.now-temp .param-icon { height: 34.65px; }
-.now-rain .param-icon { height: 23.1px; }
+/* Large icons, as in the Aladin app: the thermometer as tall as the
+   temperature with its feels-like line, the rain cloud nearly as wide as the
+   thermometer is tall. Both viewBoxes are cut to the drawing, so the size set
+   here is the size of the glyph, and both share the width of the column, so
+   that the two numbers begin on one line. They follow the size of the
+   reading, so that a narrow screen keeps its fit. */
+.now-main .param-icon { width: calc(var(--reading) * 1.15); }
+.now-temp .param-icon { height: calc(var(--reading) * 1.5); }
+.now-rain .param-icon { height: calc(var(--reading) * 1.2); }
 
 /* The right half is built like the left one: the icons stand in a column and
    the readings begin on one line beside them. The block as a whole stays at
